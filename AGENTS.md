@@ -13,8 +13,8 @@ This file contains context and instructions for continuing development of the ct
 - **Performance Focus**: 2-5x faster performance than interpretation approaches
 
 ### Current Status
-✅ **Foundation Complete** - Project structure, build system, API design, CLI framework, basic tests
-🔄 **Next Phase** - Core translation engine implementation with Binaryen integration
+✅ **Phase 1 Complete** - Core translation foundation with parametric, variable access, and basic control flow
+🔄 **Next Phase** - Memory operations and arithmetic instructions (Phase 2)
 
 ## Architecture Overview
 
@@ -87,17 +87,18 @@ Type Analysis → Code Generation → C11 Output + Runtime
 
 ### 🔄 Current Implementation Status (Detailed)
 - **Translator.cpp**: ✅ 85% complete - basic parsing, optimization, and orchestration logic
-- **TypeMapper.cpp**: ✅ 60% complete - basic type mappings, missing function signatures
-- **InstructionVisitor.cpp**: ✅ 25% complete - Phase 0 constants fully implemented, other instructions still stub methods
-- **CodeGenerator.cpp**: ❌ 10% complete - only stub methods exist
+- **TypeMapper.cpp**: ✅ 85% complete - enhanced with proper function signature generation using BinaryenTypeArity/Expand
+- **InstructionVisitor.cpp**: ✅ 75% complete - Phase 0 constants + Phase 1 parametric, variable access, and basic control flow fully implemented
+- **CodeGenerator.cpp**: ✅ 40% complete - basic generation framework with module/function orchestration and error handling
 - **ctransian_runtime.c**: ✅ 80% complete - memory management, error handling
 - **Runtime files**: ❌ Empty - memory.c, threads.c, exceptions.c, imports.c need implementation
 
 ### 🔄 Next Session Priority Tasks
-1. **InstructionVisitor Implementation** - Phase 1: Parametric instructions, control flow, variable access
-2. **CodeGenerator Implementation** - Generate proper C code output
-3. **TypeMapper Enhancement** - Complete function signature generation
-4. **Runtime Files** - Implement missing runtime components
+1. **Complete Phase 1 Control Flow** - Implement remaining `br`, `br_if`, `call`, `return` instructions
+2. **Phase 2 Memory Operations** - Implement `load`, `store`, `memory.size`, `memory.grow` with bounds checking
+3. **Phase 2 Arithmetic** - Implement basic arithmetic `add`, `sub`, `mul` operations
+4. **Runtime Files** - Implement missing runtime components (memory.c, threads.c, exceptions.c, imports.c)
+5. **CodeGenerator Enhancement** - Add proper C code generation for implemented instructions
 
 ### ⏳ Future Phases
 1. **Advanced Features** - SIMD, threading, GC support

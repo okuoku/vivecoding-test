@@ -15,6 +15,28 @@ Advanced WebAssembly to C translation powered by Binaryen.
 - **Performance Optimized**: 2-5x faster performance than interpretation-based approaches
 - **Memory Safe**: Configurable bounds checking and safe memory access patterns
 
+## Current Status
+
+`ctransian` is in active development with core translation functionality implemented:
+
+### ✅ **Phase 1 Complete** (Core Foundation)
+- **Parametric Instructions**: `drop`, `select` - Fully implemented
+- **Variable Access**: `local.get/set/tee`, `global.get/set` - Fully implemented  
+- **Basic Control Flow**: `nop`, `unreachable`, `block`, `loop`, `if` - Fully implemented
+- **Type System**: Enhanced function signature generation with multi-value support
+- **Code Generation**: Basic framework with error handling and orchestration
+
+### 🔄 **Phase 2 In Progress**
+- **Memory Operations**: `load`, `store`, `memory.size`, `memory.grow` - Next priority
+- **Basic Arithmetic**: `add`, `sub`, `mul` - Ready for implementation
+- **Advanced Control Flow**: `br`, `br_if`, `call`, `return` - Remaining Phase 1 items
+
+### 📋 **Build Status**
+- ✅ All builds passing on Linux/macOS/Windows
+- ✅ Basic test suite green
+- ✅ Binaryen integration complete
+- ✅ CLI tool functional
+
 ## Quick Start
 
 ### Installation
