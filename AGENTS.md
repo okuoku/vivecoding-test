@@ -88,13 +88,13 @@ Type Analysis → Code Generation → C11 Output + Runtime
 ### 🔄 Current Implementation Status (Detailed)
 - **Translator.cpp**: ✅ 85% complete - basic parsing, optimization, and orchestration logic
 - **TypeMapper.cpp**: ✅ 60% complete - basic type mappings, missing function signatures
-- **InstructionVisitor.cpp**: ❌ 10% complete - only stub methods exist
+- **InstructionVisitor.cpp**: ✅ 25% complete - Phase 0 constants fully implemented, other instructions still stub methods
 - **CodeGenerator.cpp**: ❌ 10% complete - only stub methods exist
 - **ctransian_runtime.c**: ✅ 80% complete - memory management, error handling
 - **Runtime files**: ❌ Empty - memory.c, threads.c, exceptions.c, imports.c need implementation
 
 ### 🔄 Next Session Priority Tasks
-1. **InstructionVisitor Implementation** - Start with constants, then basic arithmetic
+1. **InstructionVisitor Implementation** - Phase 1: Parametric instructions, control flow, variable access
 2. **CodeGenerator Implementation** - Generate proper C code output
 3. **TypeMapper Enhancement** - Complete function signature generation
 4. **Runtime Files** - Implement missing runtime components
@@ -176,9 +176,10 @@ git submodule update --init --recursive
 
 Based on WebAssembly specification and practical translation needs, the implementation should follow this prioritized approach (see `docs/IMPLEMENTATION_PLAN.md` for details):
 
-**Phase 0: Foundation (Start Here)**
+**✅ Phase 0: Foundation (COMPLETED)**
 - **Constants**: `i32.const`, `i64.const`, `f32.const`, `f64.const`, `v128.const`
 - *Why first?* Every non-trivial program uses constants
+- *Status*: ✅ **FULLY IMPLEMENTED** - All basic constants (i32, i64, f32, f64) with proper C literal generation, special value handling (NaN, Infinity), and type detection. SIMD v128 has placeholder implementation.
 
 **Phase 1: Core MVP (Essential for any functional program)**
 1. **Parametric Instructions** - `drop`, `select` (stack manipulation)
@@ -200,40 +201,46 @@ Based on WebAssembly specification and practical translation needs, the implemen
 11. **SIMD Instructions** (conditional - if SIMD enabled)
 12. **Reference Type Instructions** (WasmGC proposal)
 
-### **Immediate Next Session Tasks**
+### **Immediate Next Session Tasks (Phase 1)**
 
-**First Priority - InstructionVisitor Constants:**
+**First Priority - Parametric Instructions:**
 ```cpp
 // In src/core/instruction_visitor.cpp
-std::string InstructionVisitor::visitConstant(BinaryenExpressionRef expr) {
-    // 1. Get expression type using BinaryenExpressionGetType()
-    // 2. Get literal value using BinaryenExpressionGet*() functions
-    // 3. Generate appropriate C literal string
-    // 4. Return C code
+std::string InstructionVisitor::visitDrop(BinaryenExpressionRef expr) {
+    // Generate code to pop and discard value from stack
+}
+
+std::string InstructionVisitor::visitSelect(BinaryenExpressionRef expr) {
+    // Generate conditional expression: condition ? value1 : value2
 }
 ```
 
-**Second Priority - Basic Arithmetic:**
+**Second Priority - Variable Access Instructions:**
 ```cpp
-// Implement visitBinary() for add/sub/mul operations
-std::string InstructionVisitor::visitBinary(BinaryenExpressionRef expr) {
-    // 1. Get operation using BinaryenExpressionGetOp()
-    // 2. Visit left and right operands
-    // 3. Generate appropriate C binary operation
-    // 4. Return C code
+// Implement local.get, local.set, local.tee, global.get, global.set
+std::string InstructionVisitor::visitLocalGet(BinaryenExpressionRef expr) {
+    // Generate local variable access with proper indexing
+}
+
+std::string InstructionVisitor::visitLocalSet(BinaryenExpressionRef expr) {
+    // Generate local variable assignment
 }
 ```
 
-**Third Priority - Variable Access:**
+**Third Priority - TypeMapper Enhancement:**
 ```cpp
-// Implement local.get, local.set, global.get, global.set
-// These are straightforward variable access patterns
+// Complete function signature generation in src/core/type_mapper.cpp
+std::string generateFunctionSignature(BinaryenFunctionRef func_ref, const std::string& name) {
+    // Extract function type from Binaryen
+    // Generate C function signature with proper types
+    // Handle multi-value returns (if supported)
+}
 ```
 
 ### **Success Metrics**
-- **Phase 0 Success**: Constants translate correctly
-- **Phase 1 Success**: Simple functions with variables and control flow work
-- **Phase 2 Success**: Mathematical functions and memory operations work
+- **✅ Phase 0 Success**: Constants translate correctly, basic test WASM files compile to valid C
+- **Phase 1 Success**: Simple functions with variables work, basic control flow translates correctly
+- **Phase 2 Success**: Mathematical functions work, memory operations work with bounds checking
 - **Final Success**: Complete MVP WebAssembly-to-C translator
 
 ## Commit Guidelines
@@ -330,8 +337,9 @@ make
 ### TODOs
 - [x] Vendor Binaryen as git submodule
 - [x] Update CMakeLists.txt for vendored Binaryen
+- [x] Implement Phase 0 constants in instruction_visitor.cpp
 - [ ] Complete type_mapper.cpp implementation
-- [ ] Implement instruction_visitor.cpp
+- [ ] Implement Phase 1 instructions (parametric, control flow, variable access)
 - [ ] Complete code_generator.cpp
 - [ ] Add comprehensive test cases
 - [ ] Performance benchmarking
@@ -352,4 +360,4 @@ make
 
 ---
 
-**Next Session Focus**: Start with type_mapper.cpp implementation and core translation logic. Binaryen integration is now complete with vendored dependencies!
+**Next Session Focus**: Start with Phase 1 implementation - parametric instructions, control flow, and variable access. Phase 0 constants are fully implemented and working!

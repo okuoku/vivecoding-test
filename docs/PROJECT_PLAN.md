@@ -63,14 +63,14 @@ graph TD
 
 ## Implementation Phases
 
-### Phase 0: Foundation (Start Here) - **IMMEDIATE**
+### ✅ Phase 0: Foundation (COMPLETED)
 **Priority: HIGH** - Must be implemented first
 - [x] Project structure and build system
 - [x] Binaryen integration setup (vendored)
 - [x] Core headers and API design
-- [ ] Constants: `i32.const`, `i64.const`, `f32.const`, `f64.const`, `v128.const`
+- [x] Constants: `i32.const`, `i64.const`, `f32.const`, `f64.const`, `v128.const` (basic types complete, SIMD placeholder)
 
-### Phase 1: Core MVP (Essential for any functional program)
+### Phase 1: Core MVP (Essential for any functional program) - **NEXT**
 **Priority: HIGH** - Required for basic WebAssembly functionality
 - [ ] Parametric Instructions: `drop`, `select` (stack manipulation)
 - [ ] Control Flow: `nop`, `unreachable`, `block`, `loop`, `if`, `br`, `br_if`, `br_table`, `return`, `call`, `call_indirect`
@@ -149,7 +149,7 @@ void ctransian_destroy_context(ctransian_context_t* ctx);
 ## Performance Targets
 
 ### Translation Performance
-- **Phase 0**: Constants translate correctly, basic test WASM files compile to valid C
+- **✅ Phase 0**: Constants translate correctly, basic test WASM files compile to valid C
 - **Phase 1**: Simple functions with variables work, basic control flow translates correctly
 - **Phase 2**: Mathematical functions work, memory operations work with bounds checking
 - **Final**: Complete MVP WebAssembly-to-C translator, generated C code compiles and runs correctly

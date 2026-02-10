@@ -16,7 +16,7 @@
 **Core Components:**
 - **Translator.cpp**: ✅ 85% complete - basic parsing, optimization, and orchestration logic
 - **TypeMapper.cpp**: ✅ 60% complete - basic type mappings, but missing function signatures and multi-value support
-- **InstructionVisitor.cpp**: ❌ 10% complete - only stub methods exist
+- **InstructionVisitor.cpp**: ✅ 25% complete - Phase 0 constants fully implemented, other instructions still stub methods
 - **CodeGenerator.cpp**: ❌ 10% complete - only stub methods exist
 
 **Runtime Components:**
@@ -25,11 +25,12 @@
 
 ## WebAssembly Instruction Implementation Plan
 
-### Phase 0: Foundation (Start Here)
+### ✅ Phase 0: Foundation (COMPLETED)
 **Priority: HIGH** - Must be implemented first
 - **Constants**: `i32.const`, `i64.const`, `f32.const`, `f64.const`, `v128.const`
   - *Why first?* Every non-trivial program uses constants
   - *Complexity*: Simple - just generate C literal values
+  - *Status*: ✅ **FULLY IMPLEMENTED** - All basic constants (i32, i64, f32, f64) with proper C literal generation, special value handling (NaN, Infinity), and type detection. SIMD v128 has placeholder implementation.
 
 ### Phase 1: Core MVP (Essential for any functional program)
 **Priority: HIGH** - Required for basic WebAssembly functionality
@@ -300,38 +301,39 @@ At this point (after Phase 2), you'll have a **functional WebAssembly-to-C trans
 - **Phase 2**: Test mathematical functions, data structures, and algorithms
 - **Phase 3+**: Add comprehensive test coverage and edge cases
 
-## Immediate Next Session Tasks (Phase 0)
+## Immediate Next Session Tasks (Phase 1)
 
-### First Priority - InstructionVisitor Constants:
+### First Priority - Parametric Instructions:
 ```cpp
 // In src/core/instruction_visitor.cpp
-std::string InstructionVisitor::visitConstant(BinaryenExpressionRef expr) {
-    // 1. Get expression type using BinaryenExpressionGetType()
-    // 2. Get literal value using BinaryenExpressionGet*() functions
-    // 3. Generate appropriate C literal string
-    // 4. Return the C code
+std::string InstructionVisitor::visitDrop(BinaryenExpressionRef expr) {
+    // Generate code to pop and discard value from stack
+}
+
+std::string InstructionVisitor::visitSelect(BinaryenExpressionRef expr) {
+    // Generate conditional expression: condition ? value1 : value2
 }
 ```
 
-### Second Priority - TypeMapper Enhancement:
+### Second Priority - Variable Access Instructions:
+```cpp
+// Implement local.get, local.set, local.tee, global.get, global.set
+std::string InstructionVisitor::visitLocalGet(BinaryenExpressionRef expr) {
+    // Generate local variable access with proper indexing
+}
+
+std::string InstructionVisitor::visitLocalSet(BinaryenExpressionRef expr) {
+    // Generate local variable assignment
+}
+```
+
+### Third Priority - TypeMapper Enhancement:
 ```cpp
 // Complete function signature generation in src/core/type_mapper.cpp
 std::string generateFunctionSignature(BinaryenFunctionRef func_ref, const std::string& name) {
     // Extract function type from Binaryen
     // Generate C function signature with proper types
     // Handle multi-value returns (if supported)
-}
-```
-
-### Third Priority - CodeGenerator Foundation:
-```cpp
-// Basic function generation in src/core/code_generator.cpp
-ctransian_error_t generateFunction(BinaryenFunctionRef func, std::string& code) {
-    // Generate complete C function:
-    // 1. Function signature using TypeMapper
-    // 2. Local variable declarations
-    // 3. Function body using InstructionVisitor
-    // 4. Return statement
 }
 ```
 
