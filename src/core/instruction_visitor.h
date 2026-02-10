@@ -115,8 +115,8 @@ private:
                                BinaryenType from_type, 
                                BinaryenType to_type);
     std::string generateBoundsCheck(const std::string& address, 
-                                   size_t access_size,
-                                   bool is_atomic = false);
+                                  size_t access_size,
+                                  bool is_atomic = false);
     
     // Memory access helpers
     std::string generateMemoryAccess(const std::string& address,
@@ -124,6 +124,7 @@ private:
                                     size_t access_size,
                                     bool is_signed = false,
                                     bool is_atomic = false);
+    size_t getTypeSize(BinaryenType type);
     
     // SIMD helpers
     std::string getSimdIntrinsic(const std::string& operation, BinaryenType type);

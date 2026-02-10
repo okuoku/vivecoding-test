@@ -46,6 +46,8 @@ std::string InstructionVisitor::visitExpression(BinaryenExpressionRef expr) {
         return visitUnreachable(expr);
     } else if (id == BinaryenBreakId()) {
         return visitBreak(expr);
+    } else if (id == BinaryenSwitchId()) {
+        return visitSwitch(expr);
     } else if (id == BinaryenReturnId()) {
         return visitReturn(expr);
     } else if (id == BinaryenMemorySizeId()) {
@@ -120,22 +122,199 @@ std::string InstructionVisitor::visitUnary(BinaryenExpressionRef expr) {
 }
 
 std::string InstructionVisitor::visitBinary(BinaryenExpressionRef expr) {
-    return "/* binary operation */";
+    // Get left and right operands
+    BinaryenExpressionRef left = BinaryenBinaryGetLeft(expr);
+    BinaryenExpressionRef right = BinaryenBinaryGetRight(expr);
+    
+    // Get the binary operation type
+    BinaryenOp op = BinaryenBinaryGetOp(expr);
+    
+    // Generate code for operands
+    std::string left_str = visitExpression(left);
+    std::string right_str = visitExpression(right);
+    
+    // Generate C code based on the operation using if-else instead of switch
+    // Integer arithmetic
+    if (op == BinaryenAddInt32() || op == BinaryenAddInt64() ||
+        op == BinaryenAddFloat32() || op == BinaryenAddFloat64()) {
+        return "(" + left_str + " + " + right_str + ")";
+    }
+    if (op == BinaryenSubInt32() || op == BinaryenSubInt64() ||
+        op == BinaryenSubFloat32() || op == BinaryenSubFloat64()) {
+        return "(" + left_str + " - " + right_str + ")";
+    }
+    if (op == BinaryenMulInt32() || op == BinaryenMulInt64() ||
+        op == BinaryenMulFloat32() || op == BinaryenMulFloat64()) {
+        return "(" + left_str + " * " + right_str + ")";
+    }
+    
+    // Integer comparison
+    if (op == BinaryenEqInt32() || op == BinaryenEqInt64() ||
+        op == BinaryenEqFloat32() || op == BinaryenEqFloat64()) {
+        return "(" + left_str + " == " + right_str + ")";
+    }
+    if (op == BinaryenNeInt32() || op == BinaryenNeInt64() ||
+        op == BinaryenNeFloat32() || op == BinaryenNeFloat64()) {
+        return "(" + left_str + " != " + right_str + ")";
+    }
+    if (op == BinaryenLtSInt32() || op == BinaryenLtSInt64() ||
+        op == BinaryenLtUInt32() || op == BinaryenLtUInt64() ||
+        op == BinaryenLtFloat32() || op == BinaryenLtFloat64()) {
+        return "(" + left_str + " < " + right_str + ")";
+    }
+    if (op == BinaryenGtSInt32() || op == BinaryenGtSInt64() ||
+        op == BinaryenGtFloat32() || op == BinaryenGtFloat64()) {
+        return "(" + left_str + " > " + right_str + ")";
+    }
+    if (op == BinaryenLeSInt32() || op == BinaryenLeSInt64() ||
+        op == BinaryenLeFloat32() || op == BinaryenLeFloat64()) {
+        return "(" + left_str + " <= " + right_str + ")";
+    }
+    if (op == BinaryenGeSInt32() || op == BinaryenGeSInt64() ||
+        op == BinaryenGeFloat32() || op == BinaryenGeFloat64()) {
+        return "(" + left_str + " >= " + right_str + ")";
+    }
+            
+    // Bitwise operations (basic ones for Phase 2)
+    if (op == BinaryenAndInt32() || op == BinaryenAndInt64()) {
+        return "(" + left_str + " & " + right_str + ")";
+    }
+    if (op == BinaryenOrInt32() || op == BinaryenOrInt64()) {
+        return "(" + left_str + " | " + right_str + ")";
+    }
+    if (op == BinaryenXorInt32() || op == BinaryenXorInt64()) {
+        return "(" + left_str + " ^ " + right_str + ")";
+    }
+        
+    return "/* unsupported binary op */";
 }
 
 std::string InstructionVisitor::visitLoad(BinaryenExpressionRef expr) {
-    return "/* load operation */";
+    // Get the memory address expression
+    BinaryenExpressionRef addr = BinaryenLoadGetPtr(expr);
+    
+    // Get offset and alignment
+    BinaryenIndex offset = BinaryenLoadGetOffset(expr);
+    BinaryenIndex align = BinaryenLoadGetAlign(expr);
+    
+    // Get the result type of the load
+    BinaryenType result_type = BinaryenExpressionGetType(expr);
+    
+    // Check if it's signed
+    bool is_signed = BinaryenLoadIsSigned(expr);
+    
+    // Generate code for the address
+    std::string addr_str = visitExpression(addr);
+    
+    // Calculate final address
+    std::string final_addr = "(" + addr_str;
+    if (offset > 0) {
+        final_addr += " + " + std::to_string(offset);
+    }
+    final_addr += ")";
+    
+    // Generate bounds check (if enabled in config)
+    std::string bounds_check = "";
+    if (config_ && config_->bounds_checking != CTRANIAN_BOUNDS_NONE) {
+        bounds_check = generateBoundsCheck(final_addr, getTypeSize(result_type));
+    }
+    
+    // Get the C type
+    std::string c_type = "int32_t"; // Default fallback
+    if (type_mapper_) {
+        c_type = const_cast<TypeMapper*>(type_mapper_)->wasmTypeToCType(result_type);
+    }
+    
+    // Generate the load operation
+    std::string load_expr = "*(";
+    if (is_signed && (result_type == BinaryenTypeInt32() || result_type == BinaryenTypeInt64())) {
+        load_expr += "const ";
+    }
+    load_expr += c_type + "*)(" + final_addr + ")";
+    
+    // Combine bounds check and load
+    if (!bounds_check.empty()) {
+        return bounds_check + "; " + load_expr;
+    } else {
+        return load_expr;
+    }
 }
 
 std::string InstructionVisitor::visitStore(BinaryenExpressionRef expr) {
-    return "/* store operation */";
+    // Get the memory address expression
+    BinaryenExpressionRef addr = BinaryenStoreGetPtr(expr);
+    
+    // Get the value being stored
+    BinaryenExpressionRef value = BinaryenStoreGetValue(expr);
+    
+    // Get offset and alignment
+    BinaryenIndex offset = BinaryenStoreGetOffset(expr);
+    BinaryenIndex align = BinaryenStoreGetAlign(expr);
+    
+    // Get stored value type
+    BinaryenType value_type = BinaryenStoreGetValueType(expr);
+    
+    // Generate code for address and value
+    std::string addr_str = visitExpression(addr);
+    std::string value_str = visitExpression(value);
+    
+    // Calculate final address
+    std::string final_addr = "(" + addr_str;
+    if (offset > 0) {
+        final_addr += " + " + std::to_string(offset);
+    }
+    final_addr += ")";
+    
+    // Generate bounds check (if enabled in config)
+    std::string bounds_check = "";
+    if (config_ && config_->bounds_checking != CTRANIAN_BOUNDS_NONE) {
+        bounds_check = generateBoundsCheck(final_addr, getTypeSize(value_type));
+    }
+    
+    // Get the C type
+    std::string c_type = "int32_t"; // Default fallback
+    if (type_mapper_) {
+        c_type = const_cast<TypeMapper*>(type_mapper_)->wasmTypeToCType(value_type);
+    }
+    
+    // Generate store operation
+    std::string store_expr = "*(" + c_type + "*)(" + final_addr + ") = " + value_str;
+    
+    // Combine bounds check and store
+    if (!bounds_check.empty()) {
+        return bounds_check + "; " + store_expr;
+    } else {
+        return store_expr;
+    }
 }
 
-std::string InstructionVisitor::visitCall(BinaryenExpressionRef expr) {
-    return "/* function call */";
+std::string ctransian::InstructionVisitor::visitCall(BinaryenExpressionRef expr) {
+    // Get the target function name
+    const char* func_name = BinaryenCallGetTarget(expr);
+    
+    // Get the number of operands
+    BinaryenIndex num_operands = BinaryenCallGetNumOperands(expr);
+    
+    // Generate the function name
+    std::string call_expr = std::string(func_name) + "(";
+    
+    // Generate arguments
+    for (BinaryenIndex i = 0; i < num_operands; ++i) {
+        if (i > 0) {
+            call_expr += ", ";
+        }
+        
+        BinaryenExpressionRef operand = BinaryenCallGetOperandAt(expr, i);
+        std::string operand_str = visitExpression(operand);
+        call_expr += operand_str;
+    }
+    
+    call_expr += ")";
+    
+    return call_expr;
 }
 
-std::string InstructionVisitor::visitBlock(BinaryenExpressionRef expr) {
+std::string ctransian::InstructionVisitor::visitBlock(BinaryenExpressionRef expr) {
     // Get block name (label) - may be empty
     const char* block_name = BinaryenBlockGetName(expr);
     
@@ -253,19 +432,65 @@ std::string InstructionVisitor::visitUnreachable(BinaryenExpressionRef expr) {
 }
 
 std::string InstructionVisitor::visitBreak(BinaryenExpressionRef expr) {
-    return "/* break */";
+    // Get the target label name (empty for implicit break)
+    const char* label_name = BinaryenBreakGetName(expr);
+    
+    // Get the value being passed to the break target (if any)
+    BinaryenExpressionRef value = BinaryenBreakGetValue(expr);
+    
+    std::string result;
+    
+    // Generate the value expression if present
+    if (value) {
+        std::string value_str = visitExpression(value);
+        if (label_name && strlen(label_name) > 0) {
+            result = "goto label_" + std::string(label_name) + "_break";
+        } else {
+            result = "break";
+        }
+        // Store the value in a temporary before breaking if needed
+        result = "/* value: " + value_str + "; */ " + result;
+    } else {
+        if (label_name && strlen(label_name) > 0) {
+            result = "goto label_" + std::string(label_name) + "_break";
+        } else {
+            result = "break";
+        }
+    }
+    
+    return result;
 }
 
 std::string InstructionVisitor::visitReturn(BinaryenExpressionRef expr) {
-    return "/* return */";
+    // Get the return value (if any)
+    BinaryenExpressionRef value = BinaryenReturnGetValue(expr);
+    
+    if (value) {
+        // Generate code for the return value
+        std::string value_str = visitExpression(value);
+        return "return " + value_str;
+    } else {
+        // Void return
+        return "return";
+    }
 }
 
 std::string InstructionVisitor::visitMemorySize(BinaryenExpressionRef expr) {
-    return "/* memory.size */";
+    // memory.size returns the current memory size in pages
+    // We need to call the runtime function to get the current memory size
+    return "ctransian_memory_size()";
 }
 
 std::string InstructionVisitor::visitMemoryGrow(BinaryenExpressionRef expr) {
-    return "/* memory.grow */";
+    // Get the number of pages to grow
+    BinaryenExpressionRef delta = BinaryenMemoryGrowGetDelta(expr);
+    
+    // Generate code for the delta expression
+    std::string delta_str = visitExpression(delta);
+    
+    // memory.grow returns the previous size or -1 on failure
+    // We need to call the runtime function to grow memory
+    return "ctransian_memory_grow(" + delta_str + ")";
 }
 
 std::string InstructionVisitor::visitLocalGet(BinaryenExpressionRef expr) {
@@ -338,6 +563,45 @@ std::string InstructionVisitor::visitGlobalSet(BinaryenExpressionRef expr) {
     
     // Generate assignment statement
     return var_name + " = " + value_str;
+}
+
+std::string InstructionVisitor::visitSwitch(BinaryenExpressionRef expr) {
+    // Get the condition expression
+    BinaryenExpressionRef condition = BinaryenSwitchGetCondition(expr);
+    
+    // Get the number of targets
+    BinaryenIndex num_targets = BinaryenSwitchGetNumNames(expr);
+    
+    // Get the default target
+    const char* default_target = BinaryenSwitchGetDefaultName(expr);
+    
+    std::string condition_str = visitExpression(condition);
+    std::string result = "switch (" + condition_str + ") {\n";
+    
+    // Generate case statements for each target
+    for (BinaryenIndex i = 0; i < num_targets; ++i) {
+        const char* target_name = BinaryenSwitchGetNameAt(expr, i);
+        result += "  case " + std::to_string(i) + ": goto label_" + std::string(target_name) + "_break;\n";
+    }
+    
+    // Generate default case
+    result += "  default: goto label_" + std::string(default_target) + "_break;\n";
+    result += "}";
+    
+    return result;
+}
+
+std::string InstructionVisitor::generateBoundsCheck(const std::string& address, size_t access_size, bool is_atomic) {
+    // Generate bounds check: if address is out of bounds, trap
+    return "CTRANIAN_BOUNDS_CHECK(" + address + ", " + std::to_string(access_size) + ")";
+}
+
+size_t InstructionVisitor::getTypeSize(BinaryenType type) {
+    // Fallback size calculations
+    if (type == BinaryenTypeInt32() || type == BinaryenTypeFloat32()) return 4;
+    if (type == BinaryenTypeInt64() || type == BinaryenTypeFloat64()) return 8;
+    if (type == BinaryenTypeVec128()) return 16;
+    return 0; // Unknown type
 }
 
 std::string InstructionVisitor::generateMemoryOrder(ctransian_memory_order_t order) {
