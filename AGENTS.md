@@ -183,6 +183,20 @@ git submodule update --init --recursive
 3. **Control Flow** - Handle blocks, loops, branches
 4. **Function Translation** - Complete function body generation
 
+## Commit Guidelines
+
+### Build Testing Rules
+- **Always keep the repository in buildable state** - Test the build locally before committing
+- **Exception for documentation** - Skip build testing for changes that don't affect the build (e.g., documentation updates, non-code files)
+
+### Build Validation
+Before committing code changes, run:
+```bash
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+make
+```
+
 ## Implementation Guidelines
 
 ### Code Style
