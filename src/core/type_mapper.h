@@ -26,6 +26,7 @@ public:
     std::string generateFunctionSignature(BinaryenFunctionRef func_ref, const std::string& name);
     std::string getReturnTypeString(BinaryenType return_type);
     std::vector<std::string> getParameterTypeStrings(BinaryenType param_types);
+    std::string generateParameterListString(BinaryenType param_types);
 
     // Value type mapping
     std::string getValueTypeString(BinaryenType value_type);

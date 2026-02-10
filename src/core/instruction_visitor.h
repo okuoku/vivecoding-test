@@ -29,6 +29,9 @@ public:
     std::string visitUnary(BinaryenExpressionRef expr);
     std::string visitBinary(BinaryenExpressionRef expr);
     std::string visitSelect(BinaryenExpressionRef expr);
+    std::string visitDrop(BinaryenExpressionRef expr);
+    std::string visitNop(BinaryenExpressionRef expr);
+    std::string visitUnreachable(BinaryenExpressionRef expr);
     std::string visitLoad(BinaryenExpressionRef expr);
     std::string visitStore(BinaryenExpressionRef expr);
     std::string visitCall(BinaryenExpressionRef expr);

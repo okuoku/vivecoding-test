@@ -70,9 +70,49 @@ BinaryenType TypeMapper::cTypeToWasmType(const std::string& c_type) {
 }
 
 std::string TypeMapper::generateFunctionSignature(BinaryenFunctionRef func_ref, const std::string& name) {
-    // Get function type from Binaryen
-    // This is a simplified implementation - full implementation would query Binaryen for function signature
-    return "void " + name + "(void)"; // Placeholder
+    // Get parameter and result types from Binaryen
+    BinaryenType param_types = BinaryenFunctionGetParams(func_ref);
+    BinaryenType result_types = BinaryenFunctionGetResults(func_ref);
+    
+    // Generate return type string
+    std::string return_type_str = getReturnTypeString(result_types);
+    
+    // Generate parameter list
+    std::string param_list = generateParameterListString(param_types);
+    
+    // Combine into function signature
+    return return_type_str + " " + name + "(" + param_list + ")";
+}
+
+std::string TypeMapper::generateParameterListString(BinaryenType param_types) {
+    // Handle no parameters
+    if (param_types == BinaryenTypeNone()) {
+        return "void";
+    }
+    
+    // Get the number of parameters
+    BinaryenIndex num_params = BinaryenTypeArity(param_types);
+    
+    if (num_params == 0) {
+        return "void";
+    }
+    
+    // Extract individual parameter types
+    std::vector<BinaryenType> type_array(num_params);
+    BinaryenTypeExpand(param_types, type_array.data());
+    
+    // Generate parameter list string
+    std::string param_list;
+    for (BinaryenIndex i = 0; i < num_params; ++i) {
+        if (i > 0) {
+            param_list += ", ";
+        }
+        
+        std::string param_type_str = wasmTypeToCType(type_array[i]);
+        param_list += param_type_str + " param_" + std::to_string(i);
+    }
+    
+    return param_list;
 }
 
 std::string TypeMapper::getReturnTypeString(BinaryenType return_type) {
@@ -87,15 +127,28 @@ std::string TypeMapper::getReturnTypeString(BinaryenType return_type) {
 }
 
 std::vector<std::string> TypeMapper::getParameterTypeStrings(BinaryenType param_types) {
-    // This is simplified - full implementation would handle multi-value types
     std::vector<std::string> result;
     
-    // Check for basic types
-    if (param_types == BinaryenTypeInt32()) result.push_back("int32_t");
-    else if (param_types == BinaryenTypeInt64()) result.push_back("int64_t");
-    else if (param_types == BinaryenTypeFloat32()) result.push_back("float");
-    else if (param_types == BinaryenTypeFloat64()) result.push_back("double");
-    else if (param_types == BinaryenTypeVec128()) result.push_back("v128_t");
+    // Handle no parameters
+    if (param_types == BinaryenTypeNone()) {
+        return result;
+    }
+    
+    // Get the number of parameters
+    BinaryenIndex num_params = BinaryenTypeArity(param_types);
+    
+    if (num_params == 0) {
+        return result;
+    }
+    
+    // Extract individual parameter types
+    std::vector<BinaryenType> type_array(num_params);
+    BinaryenTypeExpand(param_types, type_array.data());
+    
+    // Convert each type to string
+    for (BinaryenIndex i = 0; i < num_params; ++i) {
+        result.push_back(wasmTypeToCType(type_array[i]));
+    }
     
     return result;
 }
