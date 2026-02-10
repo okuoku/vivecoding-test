@@ -266,6 +266,23 @@ make
 - **PascalCase** for classes/types
 - **4 spaces** indentation, no tabs
 
+### Documentation Synchronization
+- **Always update `docs/` in sync** with source code changes
+- **When editing source files**: Update corresponding documentation files immediately
+- **Documentation files to maintain**:
+  - `docs/API.md` - Update when changing public API (`src/api/`, `include/ctransian/public.h`)
+  - `docs/ARCHITECTURE.md` - Update when changing core architecture (`src/core/`)
+  - `docs/RUNTIME.md` - Update when changing runtime implementation (`src/runtime/`)
+  - `docs/IMPLEMENTATION_PLAN.md` - Update when changing implementation status or adding new features
+  - `docs/CLI.md` - Update when changing CLI options or behavior (`src/cli/`)
+  - `README.md` - Update for major feature changes or status updates
+- **Documentation update workflow**:
+  1. Make source code change
+  2. Immediately update relevant documentation files
+  3. Verify documentation reflects the actual implementation
+  4. Test both code and documentation examples
+- **Documentation quality**: Keep examples working, maintain accuracy, update status indicators
+
 ### Memory Management
 - **RAII** in C++ code
 - **Smart pointers** where appropriate
