@@ -146,6 +146,8 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug -DCTRANIAN_ENABLE_SIMD=ON
 make
 ```
 
+**Note**: The `/build` directory is ignored by Git (see `.gitignore`). Use it for local testing and development only.
+
 ### Testing
 ```bash
 make test                    # Run all tests

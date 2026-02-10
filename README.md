@@ -102,6 +102,8 @@ See the [examples/](examples/) directory for comprehensive examples:
 - C11 compatible compiler for generated code
 - Git (for submodule initialization)
 
+Note: The `/build` directory is excluded from version control via `.gitignore`.
+
 ### Build Commands
 
 ```bash
@@ -109,7 +111,7 @@ See the [examples/](examples/) directory for comprehensive examples:
 git clone --recursive https://github.com/your-org/ctransian.git
 cd ctransian
 
-# Standard build
+# Standard build (build directory is gitignored)
 mkdir build && cd build
 cmake .. && make
 
