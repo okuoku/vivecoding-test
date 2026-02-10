@@ -66,6 +66,32 @@ target_link_libraries(test_phase1_parametric ctransian-core test_utils)
 # add_executable(test_phase1_control_flow unit/test_control_flow.cpp)
 # target_link_libraries(test_phase1_control_flow ctransian-core test_utils)
 
+# Phase 2 test executables
+add_executable(test_phase2_memory unit/phase2/test_memory_operations.cpp)
+target_link_libraries(test_phase2_memory ctransian-core test_utils)
+
+add_executable(test_phase2_arithmetic unit/phase2/test_arithmetic_operations.cpp)
+target_link_libraries(test_phase2_arithmetic ctransian-core test_utils)
+
+add_executable(test_phase2_comparisons unit/phase2/test_comparison_operations.cpp)
+target_link_libraries(test_phase2_comparisons ctransian-core test_utils)
+
+add_executable(test_phase2_memory_integration integration/phase2/test_memory_integration.cpp)
+target_link_libraries(test_phase2_memory_integration ctransian-core test_utils)
+
+add_executable(test_phase2_arithmetic_integration integration/phase2/test_arithmetic_integration.cpp)
+target_link_libraries(test_phase2_arithmetic_integration ctransian-core test_utils)
+
+add_executable(test_phase2_comparison_integration integration/phase2/test_comparison_integration.cpp)
+target_link_libraries(test_phase2_comparison_integration ctransian-core test_utils)
+
+add_executable(test_phase2_comprehensive_integration integration/phase2/test_comprehensive_integration.cpp)
+target_link_libraries(test_phase2_comprehensive_integration ctransian-core test_utils)
+
+# Phase 2 test runner
+add_executable(run_phase2_tests run_phase2_tests.cpp)
+target_link_libraries(run_phase2_tests)
+
 # Add tests to CTest
 add_test(NAME BasicTest COMMAND test_ctransian_basic)
 add_test(NAME ConstantsTest COMMAND test_ctransian_constants)
@@ -80,6 +106,17 @@ if(WASM_AS_TOOL)
     add_test(NAME Phase1ParametricTest COMMAND test_phase1_parametric)
     # add_test(NAME Phase1VariablesTest COMMAND test_phase1_variables)
     # add_test(NAME Phase1ControlFlowTest COMMAND test_phase1_control_flow)
+endif()
+
+# Add Phase 2 tests if tools are available
+if(WASM_AS_TOOL)
+    add_test(NAME Phase2MemoryTest COMMAND test_phase2_memory)
+    add_test(NAME Phase2ArithmeticTest COMMAND test_phase2_arithmetic)
+    add_test(NAME Phase2ComparisonsTest COMMAND test_phase2_comparisons)
+    add_test(NAME Phase2MemoryIntegrationTest COMMAND test_phase2_memory_integration)
+    add_test(NAME Phase2ArithmeticIntegrationTest COMMAND test_phase2_arithmetic_integration)
+    add_test(NAME Phase2ComparisonIntegrationTest COMMAND test_phase2_comparison_integration)
+    add_test(NAME Phase2ComprehensiveIntegrationTest COMMAND test_phase2_comprehensive_integration)
 endif()
 
 # Custom targets for generating test WASM files from WAT files
@@ -130,9 +167,33 @@ if(WASM_AS_TOOL)
         list(APPEND PHASE1_WASM_FILES ${WASM_FILE})
     endforeach()
     
+    # Phase 2 test files
+    set(PHASE2_WAT_FILES
+        test_data/phase2/memory/memory_operations.wat
+        test_data/phase2/arithmetic/arithmetic_operations.wat
+        test_data/phase2/comparisons/comparison_operations.wat
+    )
+    
+    foreach(WAT_FILE ${PHASE2_WAT_FILES})
+        get_filename_component(WAT_NAME ${WAT_FILE} NAME_WE)
+        get_filename_component(WAT_DIR ${WAT_FILE} DIRECTORY)
+        set(WASM_FILE ${WAT_DIR}/${WAT_NAME}.wasm)
+        
+        add_custom_command(
+            OUTPUT ${WASM_FILE}
+            COMMAND ${WASM_AS_TOOL} ${CMAKE_CURRENT_SOURCE_DIR}/${WAT_FILE} -o ${WASM_FILE}
+            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${WAT_FILE}
+            COMMENT "Converting ${WAT_FILE} to ${WASM_FILE}"
+            VERBATIM
+        )
+        
+        list(APPEND PHASE2_WASM_FILES ${WASM_FILE})
+    endforeach()
+    
     # Custom targets for generating all test WASM files
     add_custom_target(generate_phase0_wasm ALL DEPENDS ${PHASE0_WASM_FILES})
     add_custom_target(generate_phase1_wasm ALL DEPENDS ${PHASE1_WASM_FILES})
+    add_custom_target(generate_phase2_wasm ALL DEPENDS ${PHASE2_WASM_FILES})
     
     # Make test executables depend on WASM file generation
     if(TARGET test_phase0_integration)
@@ -141,6 +202,27 @@ if(WASM_AS_TOOL)
     
     if(TARGET test_phase1_parametric)
         add_dependencies(test_phase1_parametric generate_phase1_wasm)
+    endif()
+    
+    # Make Phase 2 test executables depend on WASM file generation
+    if(TARGET test_phase2_memory)
+        add_dependencies(test_phase2_memory generate_phase2_wasm)
+    endif()
+    
+    if(TARGET test_phase2_memory_integration)
+        add_dependencies(test_phase2_memory_integration generate_phase2_wasm)
+    endif()
+    
+    if(TARGET test_phase2_arithmetic_integration)
+        add_dependencies(test_phase2_arithmetic_integration generate_phase2_wasm)
+    endif()
+    
+    if(TARGET test_phase2_comparison_integration)
+        add_dependencies(test_phase2_comparison_integration generate_phase2_wasm)
+    endif()
+    
+    if(TARGET test_phase2_comprehensive_integration)
+        add_dependencies(test_phase2_comprehensive_integration generate_phase2_wasm)
     endif()
     
     # if(TARGET test_phase1_variables)
