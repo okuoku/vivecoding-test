@@ -63,30 +63,42 @@ graph TD
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Weeks 1-2)
+### Phase 0: Foundation (Start Here) - **IMMEDIATE**
+**Priority: HIGH** - Must be implemented first
 - [x] Project structure and build system
-- [x] Basic CMake configuration
+- [x] Binaryen integration setup (vendored)
 - [x] Core headers and API design
-- [ ] Binaryen integration setup
-- [ ] Basic WASM parsing framework
+- [ ] Constants: `i32.const`, `i64.const`, `f32.const`, `f64.const`, `v128.const`
 
-### Phase 2: Core Translation (Weeks 3-4)
-- [ ] Type system implementation
-- [ ] Basic instruction translation
-- [ ] Memory model implementation
-- [ ] Function calling conventions
+### Phase 1: Core MVP (Essential for any functional program)
+**Priority: HIGH** - Required for basic WebAssembly functionality
+- [ ] Parametric Instructions: `drop`, `select` (stack manipulation)
+- [ ] Control Flow: `nop`, `unreachable`, `block`, `loop`, `if`, `br`, `br_if`, `br_table`, `return`, `call`, `call_indirect`
+- [ ] Variable Access: `local.get`, `local.set`, `local.tee`, `global.get`, `global.set`
 
-### Phase 3: Advanced Features (Weeks 5-6)
-- [ ] SIMD instruction support
-- [ ] Threading implementation
-- [ ] Exception handling
-- [ ] Reference types foundation
+### Phase 2: Data Operations (Essential for useful programs)
+**Priority: HIGH** - Required for real-world programs
+- [ ] Memory Instructions: `i32.load`, `i64.load`, `f32.load`, `f64.load`, `i32.store`, `i64.store`, `f32.store`, `f64.store`, `memory.size`, `memory.grow`
+- [ ] Basic Arithmetic: `i32.add`, `i32.sub`, `i32.mul`, `i64.add`, `i64.sub`, `i64.mul`, `f32.add`, `f32.sub`, `f32.mul`, `f64.add`, `f64.sub`, `f64.mul`
+- [ ] Comparisons: `i32.eq`, `i32.ne`, `i32.lt_s/u`, `i32.gt_s/u`, `i32.le_s/u`, `i32.ge_s/u`, `f32.eq`, `f32.ne`, `f32.lt`, `f32.gt`, `f32.le`, `f64.ge`
 
-### Phase 4: Optimization & Polish (Weeks 7-8)
-- [ ] Binaryen optimization integration
-- [ ] Performance tuning
-- [ ] Comprehensive testing
-- [ ] Documentation completion
+### Phase 3: Advanced Operations (Medium priority)
+**Priority: MEDIUM** - Important for complete language support
+- [ ] Bitwise Instructions: `i32.and`, `i32.or`, `i32.xor`, `i32.shl`, `i32.shr_s/u`, `i32.rotl`, `i32.rotr`
+- [ ] Conversion Instructions: `i32.wrap_i64`, `i64.extend_i32_s/u`, `f32.convert_i32_s/u`, `f32.convert_i64_s/u`
+- [ ] Advanced Arithmetic: `i32.div_s/u`, `i32.rem_s/u`, `i64.div_s/u`, `i64.rem_s/u`, `f32.div`, `f64.div`
+
+### Phase 4: Threading Support (Conditional)
+**Priority: MEDIUM** - Only if threading enabled
+- [ ] Atomic Instructions: `atomic.load`, `atomic.store`, `atomic.rmw`, `atomic.cmpxchg` variants
+- [ ] C11 thread support runtime implementation
+
+### Phase 5: Advanced Features (Low priority)
+**Priority: LOW** - Optional extensions
+- [ ] SIMD Instructions: All `v128.*` operations (conditional - only if SIMD enabled)
+- [ ] Reference Type Instructions: `ref.null`, `ref.is_null`, `ref.func`, `ref.as_non_null` (WasmGC proposal)
+- [ ] Performance tuning and Binaryen optimization integration
+- [ ] Comprehensive testing and documentation completion
 
 ## Technical Specifications
 
@@ -137,9 +149,10 @@ void ctransian_destroy_context(ctransian_context_t* ctx);
 ## Performance Targets
 
 ### Translation Performance
-- **Small modules** (<1MB): <100ms translation time
-- **Medium modules** (1-10MB): <1s translation time
-- **Large modules** (>10MB): <5s translation time
+- **Phase 0**: Constants translate correctly, basic test WASM files compile to valid C
+- **Phase 1**: Simple functions with variables work, basic control flow translates correctly
+- **Phase 2**: Mathematical functions work, memory operations work with bounds checking
+- **Final**: Complete MVP WebAssembly-to-C translator, generated C code compiles and runs correctly
 
 ### Runtime Performance
 - **Execution speed**: 2-5x faster than WebAssembly interpreters
@@ -151,6 +164,12 @@ void ctransian_destroy_context(ctransian_context_t* ctx);
 - **Constant folding**: Compile-time evaluation of constants
 - **Loop optimization**: Recognition and optimization of common patterns
 - **Inlined operations**: Direct C equivalents for simple WASM instructions
+
+### Success Metrics by Phase
+- **Phase 0 Success**: Constants translate correctly, basic test WASM files compile to valid C
+- **Phase 1 Success**: Simple functions with variables work, basic control flow translates correctly, test suite passes with generated C code
+- **Phase 2 Success**: Mathematical functions work, memory operations work with bounds checking, real-world WASM modules translate successfully
+- **Final Success**: Complete MVP WebAssembly-to-C translator, generated C code compiles and runs correctly, performance comparable to existing tools
 
 ## Testing Strategy
 
@@ -214,8 +233,8 @@ add_library(ctransian-shared SHARED ${CORE_SOURCES})
 ## Success Metrics
 
 ### Technical Goals
-- 100% WebAssembly MVP compliance by Phase 2
-- Support for 80% of active WASM proposals by Phase 4
+- 100% WebAssembly MVP compliance by Phase 2 (Data Operations)
+- Support for 80% of active WASM proposals by Phase 5 (Advanced Features)
 - 2-5x performance improvement over interpreters
 - 80%+ reduction in code size vs naive translation
 - Sub-second translation time for typical modules
@@ -248,18 +267,18 @@ add_library(ctransian-shared SHARED ${CORE_SOURCES})
 
 ## Future Roadmap
 
-### Short Term (3-6 months)
-- Complete core implementation
-- Establish community presence
-- Performance benchmarking
+### Short Term (Current - Phase 2)
+- Complete Phase 0-2 implementation (Constants → Data Operations)
+- Achieve functional WebAssembly-to-C translator
+- Real-world WASM module translation
 
-### Medium Term (6-12 months)
-- Advanced WASM proposal support
-- Integration with major build systems
-- Production deployments
+### Medium Term (Phase 3-4)
+- Advanced operations and threading support
+- Comprehensive test coverage and edge cases
+- Performance benchmarking vs existing tools
 
-### Long Term (1-2 years)
-- WasmGC full implementation
+### Long Term (Phase 5+)
+- SIMD and WasmGC proposal support
 - Advanced optimization passes
 - Plugin architecture for extensions
 

@@ -300,7 +300,7 @@ At this point (after Phase 2), you'll have a **functional WebAssembly-to-C trans
 - **Phase 2**: Test mathematical functions, data structures, and algorithms
 - **Phase 3+**: Add comprehensive test coverage and edge cases
 
-## Next Session Immediate Tasks
+## Immediate Next Session Tasks (Phase 0)
 
 ### First Priority - InstructionVisitor Constants:
 ```cpp
@@ -313,21 +313,26 @@ std::string InstructionVisitor::visitConstant(BinaryenExpressionRef expr) {
 }
 ```
 
-### Second Priority - Basic Arithmetic:
+### Second Priority - TypeMapper Enhancement:
 ```cpp
-// Implement visitBinary() for add/sub/mul operations
-std::string InstructionVisitor::visitBinary(BinaryenExpressionRef expr) {
-    // 1. Get operation using BinaryenExpressionGetOp()
-    // 2. Visit left and right operands
-    // 3. Generate appropriate C binary operation
-    // 4. Return the C code
+// Complete function signature generation in src/core/type_mapper.cpp
+std::string generateFunctionSignature(BinaryenFunctionRef func_ref, const std::string& name) {
+    // Extract function type from Binaryen
+    // Generate C function signature with proper types
+    // Handle multi-value returns (if supported)
 }
 ```
 
-### Third Priority - Variable Access:
+### Third Priority - CodeGenerator Foundation:
 ```cpp
-// Implement local.get, local.set, global.get, global.set
-// These are straightforward variable access patterns
+// Basic function generation in src/core/code_generator.cpp
+ctransian_error_t generateFunction(BinaryenFunctionRef func, std::string& code) {
+    // Generate complete C function:
+    // 1. Function signature using TypeMapper
+    // 2. Local variable declarations
+    // 3. Function body using InstructionVisitor
+    // 4. Return statement
+}
 ```
 
 ## Build and Test Commands
