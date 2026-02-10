@@ -5,11 +5,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "ctransian/config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "ctransian/config.h"
 
 /* Forward declarations */
 typedef struct ctransian_context ctransian_context_t;
@@ -23,9 +23,9 @@ typedef enum {
     CTRANIAN_ERROR_INVALID_CONFIG = 2,
     CTRANIAN_ERROR_PARSE_FAILED = 3,
     CTRANIAN_ERROR_TRANSLATION_FAILED = 4,
-    CTRANIAN_ERROR_MEMORY_ALLOCATION = 5,
-    CTRANIAN_ERROR_UNSUPPORTED_FEATURE = 6,
-    CTRANIAN_ERROR_VALIDATION_FAILED = 7,
+    CTRANIAN_ERROR_VALIDATION_FAILED = 5,
+    CTRANIAN_ERROR_MEMORY_ALLOCATION = 6,
+    CTRANIAN_ERROR_UNSUPPORTED_FEATURE = 7,
     CTRANIAN_ERROR_IO_ERROR = 8
 } ctransian_error_t;
 
@@ -50,6 +50,15 @@ typedef enum {
     CTRANIAN_C11 = 1,
     CTRANIAN_GNU11 = 2
 } ctransian_c_standard_t;
+
+/* Memory ordering for atomic operations */
+typedef enum {
+    CTRANIAN_MEMORY_ORDER_RELAXED = 0,
+    CTRANIAN_MEMORY_ORDER_ACQUIRE = 1,
+    CTRANIAN_MEMORY_ORDER_RELEASE = 2,
+    CTRANIAN_MEMORY_ORDER_ACQ_REL = 3,
+    CTRANIAN_MEMORY_ORDER_SEQ_CST = 4
+} ctransian_memory_order_t;
 
 /* Runtime types */
 typedef enum {
@@ -106,6 +115,22 @@ struct ctransian_result {
     void* reserved[8];
 };
 
+/* Module info structure */
+typedef struct {
+    uint32_t num_functions;
+    uint32_t num_imports;
+    uint32_t num_exports;
+    uint32_t num_memory_segments;
+    uint32_t num_tables;
+    uint32_t num_globals;
+    uint32_t num_types;
+    size_t code_size_estimate;
+    bool has_simd;
+    bool has_threads;
+    bool has_gc;
+    bool has_wasi_imports;
+} ctransian_module_info_t;
+
 /* Callback types for streaming translation */
 typedef size_t (*ctransian_read_callback_t)(void* user_data, uint8_t* buffer, size_t size);
 typedef int (*ctransian_write_callback_t)(void* user_data, const char* data, size_t size);
@@ -158,22 +183,7 @@ ctransian_error_t ctransian_validate_binary(
 
 ctransian_error_t ctransian_validate_text(const char* wat_text);
 
-/* Statistics and introspection */
-typedef struct {
-    uint32_t num_functions;
-    uint32_t num_imports;
-    uint32_t num_exports;
-    uint32_t num_memory_segments;
-    uint32_t num_tables;
-    uint32_t num_globals;
-    uint32_t num_types;
-    size_t code_size_estimate;
-    bool has_simd;
-    bool has_threads;
-    bool has_gc;
-    bool has_wasi_imports;
-} ctransian_module_info_t;
-
+/* Analysis functions */
 ctransian_error_t ctransian_analyze_binary(
     const uint8_t* wasm_data,
     size_t wasm_size,

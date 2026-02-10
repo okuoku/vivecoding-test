@@ -23,7 +23,7 @@ public:
     BinaryenType cTypeToWasmType(const std::string& c_type);
 
     // Function type mapping
-    std::string generateFunctionSignature(BinaryenFunctionType func_type, const std::string& name);
+    std::string generateFunctionSignature(BinaryenFunctionRef func_ref, const std::string& name);
     std::string getReturnTypeString(BinaryenType return_type);
     std::vector<std::string> getParameterTypeStrings(BinaryenType param_types);
 

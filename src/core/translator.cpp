@@ -230,7 +230,7 @@ ctransian_error_t Translator::parseModule(const uint8_t* data, size_t size) {
     }
     
     // Create Binaryen module from binary data
-    module_ = BinaryenModuleRead(data, size);
+    module_ = BinaryenModuleRead(reinterpret_cast<char*>(const_cast<uint8_t*>(data)), size);
     if (!module_) {
         return CTRANIAN_ERROR_PARSE_FAILED;
     }
