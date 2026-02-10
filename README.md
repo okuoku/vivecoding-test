@@ -20,8 +20,8 @@ Advanced WebAssembly to C translation powered by Binaryen.
 ### Installation
 
 ```bash
-# Build from source
-git clone https://github.com/your-org/ctransian.git
+# Clone with submodules (includes Binaryen)
+git clone --recursive https://github.com/your-org/ctransian.git
 cd ctransian
 mkdir build && cd build
 cmake .. && make
@@ -99,12 +99,16 @@ See the [examples/](examples/) directory for comprehensive examples:
 
 - CMake 3.15+
 - C++17 compatible compiler
-- Binaryen library
 - C11 compatible compiler for generated code
+- Git (for submodule initialization)
 
 ### Build Commands
 
 ```bash
+# Clone with submodules (includes Binaryen)
+git clone --recursive https://github.com/your-org/ctransian.git
+cd ctransian
+
 # Standard build
 mkdir build && cd build
 cmake .. && make
@@ -114,6 +118,9 @@ cmake -DCMAKE_BUILD_TYPE=Debug .. && make
 
 # With specific features
 cmake -DCTRANIAN_ENABLE_WASI=ON -DCTRANIAN_ENABLE_GC=OFF .. && make
+
+# Update submodules (if needed)
+git submodule update --init --recursive
 ```
 
 ## Testing

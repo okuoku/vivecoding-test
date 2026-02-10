@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "ctransian/ctransian_runtime.h"
 
 /*
  * Example of using ctransian runtime for a simple math function

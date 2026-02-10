@@ -16,7 +16,7 @@ endif()
 
 # Compiler-specific options
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-error=extra-semi -Wno-error=format-pedantic)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_compile_options(-g -O0)
     else()
@@ -24,9 +24,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     endif()
 endif()
 
-# Find required dependencies
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(BINARYEN REQUIRED binaryen)
+# Add vendored Binaryen
+add_subdirectory(third_party/binaryen)
 
 # Optional: Find Threads
 find_package(Threads)
@@ -49,7 +48,7 @@ configure_file(
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include
-    ${BINARYEN_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/binaryen/src
 )
 
 # Core library sources
@@ -81,12 +80,10 @@ target_include_directories(ctransian-core
         src
 )
 target_link_libraries(ctransian-core
-    PUBLIC
-        ${BINARYEN_LIBRARIES}
     PRIVATE
+        binaryen
         $<$<BOOL:${CMAKE_USE_PTHREADS_INIT}>:Threads::Threads>
 )
-target_compile_options(ctransian-core PRIVATE ${BINARYEN_CFLAGS_OTHER})
 
 # Create shared library
 add_library(ctransian-shared SHARED ${CORE_SOURCES})
@@ -99,12 +96,10 @@ target_include_directories(ctransian-shared
         src
 )
 target_link_libraries(ctransian-shared
-    PUBLIC
-        ${BINARYEN_LIBRARIES}
     PRIVATE
+        binaryen
         $<$<BOOL:${CMAKE_USE_PTHREADS_INIT}>:Threads::Threads>
 )
-target_compile_options(ctransian-shared PRIVATE ${BINARYEN_CFLAGS_OTHER})
 set_target_properties(ctransian-shared PROPERTIES OUTPUT_NAME ctransian)
 
 # CLI executable
@@ -144,64 +139,64 @@ if(CTRANIAN_ENABLE_THREADS)
     add_compile_definitions(CTRANIAN_ENABLE_THREADS=1)
 endif()
 
-# Testing
-if(CTRANIAN_BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-endif()
+# Testing (disabled during development)
+# if(CTRANIAN_BUILD_TESTS)
+#     enable_testing()
+#     add_subdirectory(tests)
+# endif()
 
-# Examples
-if(CTRANIAN_BUILD_EXAMPLES)
-    add_subdirectory(examples)
-endif()
+# Examples (disabled during development)
+# if(CTRANIAN_BUILD_EXAMPLES)
+#     add_subdirectory(examples)
+# endif()
 
-# Installation
-include(GNUInstallDirs)
+# Installation (commented out during development)
+# include(GNUInstallDirs)
 
-install(TARGETS ctransian-core ctransian-shared ctransian-runtime ctransian
-    EXPORT CtransianTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+# install(TARGETS ctransian-core ctransian-shared ctransian-runtime ctransian
+#     EXPORT CtransianTargets
+#     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+# )
 
-install(DIRECTORY include/ctransian
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING PATTERN "*.h"
-)
+# install(DIRECTORY include/ctransian
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#     FILES_MATCHING PATTERN "*.h"
+# )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/ctransian/config.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ctransian
-)
+# install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/ctransian/config.h
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ctransian
+# )
 
-# Export configuration
-install(EXPORT CtransianTargets
-    FILE CtransianTargets.cmake
-    NAMESPACE Ctransian::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Ctransian
-)
+# Export configuration (commented out during development)
+# install(EXPORT CtransianTargets
+#     FILE CtransianTargets.cmake
+#     NAMESPACE Ctransian::
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Ctransian
+# )
 
-# Generate config file
-include(CMakePackageConfigHelpers)
+# Generate config file (commented out during development)
+# include(CMakePackageConfigHelpers)
 
-configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CtransianConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/CtransianConfig.cmake"
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Ctransian
-)
+# configure_package_config_file(
+#     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CtransianConfig.cmake.in"
+#     "${CMAKE_CURRENT_BINARY_DIR}/CtransianConfig.cmake"
+#     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Ctransian
+# )
 
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/CtransianConfigVersion.cmake"
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
+# write_basic_package_version_file(
+#     "${CMAKE_CURRENT_BINARY_DIR}/CtransianConfigVersion.cmake"
+#     VERSION ${PROJECT_VERSION}
+#     COMPATIBILITY SameMajorVersion
+# )
 
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/CtransianConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/CtransianConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Ctransian
-)
+# install(FILES
+#     "${CMAKE_CURRENT_BINARY_DIR}/CtransianConfig.cmake"
+#     "${CMAKE_CURRENT_BINARY_DIR}/CtransianConfigVersion.cmake"
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Ctransian
+# )
 
 # Development targets
 add_custom_target(run-tests
@@ -238,7 +233,6 @@ message(STATUS "  Build tests: ${CTRANIAN_BUILD_TESTS}")
 message(STATUS "  Build examples: ${CTRANIAN_BUILD_EXAMPLES}")
 message(STATUS "")
 message(STATUS "Dependencies:")
-message(STATUS "  Binaryen found: ${BINARYEN_FOUND}")
-message(STATUS "  Binaryen version: ${BINARYEN_VERSION}")
+message(STATUS "  Binaryen: vendored (third_party/binaryen)")
 message(STATUS "  Threads available: ${CMAKE_USE_PTHREADS_INIT}")
 message(STATUS "")

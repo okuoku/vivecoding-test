@@ -4,16 +4,35 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Forward declarations */
-struct ctransian_memory;
 struct ctransian_global;
 struct ctransian_table;
 struct ctransian_instance;
+
+/* Memory structure */
+struct ctransian_memory {
+    uint8_t* data;
+    size_t size;
+    size_t page_size;
+    size_t max_pages;
+};
+
+/* Instance structure */
+struct ctransian_instance {
+    struct ctransian_memory* memory;
+    struct ctransian_global* globals;
+    struct ctransian_table* table;
+    void* extra;
+};
+
+/* Thread type definition */
+typedef pthread_t ctransian_thread_t;
 
 /* Error handling */
 void ctransian_runtime_set_error(const char* message);
@@ -107,19 +126,35 @@ void ctransian_leb128_write(uint8_t** data, uint32_t value);
 
 /* SIMD support macros (when enabled) */
 #ifdef CTRANIAN_ENABLE_SIMD
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #include <immintrin.h>
 
 /* SIMD type definitions */
 typedef __m128i ctransian_v128;
 typedef __m128  ctransian_f32x4;
 typedef __m128d ctransian_f64x2;
+#else
+/* ARM/Other architectures - placeholder types */
+typedef struct { uint64_t data[2]; } ctransian_v128;
+typedef struct { float data[4]; } ctransian_f32x4;
+typedef struct { double data[2]; } ctransian_f64x2;
+#endif
 
 /* SIMD utility macros */
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #define CTRANIAN_V128_LOAD(mem, addr) \
     (ctransian_memory_check_bounds(mem, addr, 16) ? _mm_load_si128((__m128i*)((uint8_t*)(mem)->data + addr)) : (ctransian_trap(CTRANIAN_TRAP_OUT_OF_BOUNDS_MEMORY_ACCESS), _mm_setzero_si128()))
 
 #define CTRANIAN_V128_STORE(mem, addr, val) \
     do { if (ctransian_memory_check_bounds(mem, addr, 16)) _mm_store_si128((__m128i*)((uint8_t*)(mem)->data + addr), val); else ctransian_trap(CTRANIAN_TRAP_OUT_OF_BOUNDS_MEMORY_ACCESS); } while(0)
+#else
+/* ARM/Other architectures - placeholder implementations */
+#define CTRANIAN_V128_LOAD(mem, addr) \
+    (ctransian_memory_check_bounds(mem, addr, 16) ? (*(ctransian_v128*)((uint8_t*)(mem)->data + addr)) : (ctransian_trap(CTRANIAN_TRAP_OUT_OF_BOUNDS_MEMORY_ACCESS), (ctransian_v128){0,0}))
+
+#define CTRANIAN_V128_STORE(mem, addr, val) \
+    do { if (ctransian_memory_check_bounds(mem, addr, 16)) *(ctransian_v128*)((uint8_t*)(mem)->data + addr) = val; else ctransian_trap(CTRANIAN_TRAP_OUT_OF_BOUNDS_MEMORY_ACCESS); } while(0)
+#endif
 #endif
 
 #ifdef __cplusplus

@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include "config.h"
+#include "ctransian/config.h"
 
 /* Forward declarations */
 typedef struct ctransian_context ctransian_context_t;
