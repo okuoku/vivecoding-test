@@ -1,0 +1,54 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Find required dependencies
+find_dependency(PkgConfig)
+find_dependency(Threads)
+
+# Find Binaryen
+pkg_check_modules(BINARYEN REQUIRED binaryen)
+
+# Include our targets
+include("${CMAKE_CURRENT_LIST_DIR}/CtransianTargets.cmake")
+
+# Set variables for users
+set(CTRANIAN_VERSION @PROJECT_VERSION@)
+set(CTRANIAN_FOUND TRUE)
+
+# Check for optional features
+if(@CTRANIAN_ENABLE_WASI@)
+    set(CTRANIAN_ENABLE_WASI TRUE)
+else()
+    set(CTRANIAN_ENABLE_WASI FALSE)
+endif()
+
+if(@CTRANIAN_ENABLE_GC@)
+    set(CTRANIAN_ENABLE_GC TRUE)
+else()
+    set(CTRANIAN_ENABLE_GC FALSE)
+endif()
+
+if(@CTRANIAN_ENABLE_SIMD@)
+    set(CTRANIAN_ENABLE_SIMD TRUE)
+else()
+    set(CTRANIAN_ENABLE_SIMD FALSE)
+endif()
+
+if(@CTRANIAN_ENABLE_THREADS@)
+    set(CTRANIAN_ENABLE_THREADS TRUE)
+else()
+    set(CTRANIAN_ENABLE_THREADS FALSE)
+endif()
+
+# Provide usage information
+check_required_components(Ctransian)
+
+# Print configuration (optional)
+if(NOT CTRANIAN_FIND_QUIETLY)
+    message(STATUS "Found ctransian: ${CTRANIAN_VERSION}")
+    message(STATUS "  WASI support: ${CTRANIAN_ENABLE_WASI}")
+    message(STATUS "  WasmGC support: ${CTRANIAN_ENABLE_GC}")
+    message(STATUS "  SIMD support: ${CTRANIAN_ENABLE_SIMD}")
+    message(STATUS "  Threading support: ${CTRANIAN_ENABLE_THREADS}")
+endif()

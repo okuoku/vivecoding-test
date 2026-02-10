@@ -1,0 +1,64 @@
+#ifndef CTRANIAN_CONFIG_H
+#define CTRANIAN_CONFIG_H
+
+/* Version information */
+#define CTRANIAN_VERSION_MAJOR 1
+#define CTRANIAN_VERSION_MINOR 0
+#define CTRANIAN_VERSION_PATCH 0
+#define CTRANIAN_VERSION "1.0.0"
+
+/* Build configuration */
+#define CTRANIAN_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+#define CTRANIAN_CXX_STANDARD @CMAKE_CXX_STANDARD@
+#define CTRANIAN_C_STANDARD @CMAKE_C_STANDARD@
+
+/* Feature flags */
+#cmakedefine CTRANIAN_ENABLE_WASI 1
+#cmakedefine CTRANIAN_ENABLE_GC 1
+#cmakedefine CTRANIAN_ENABLE_SIMD 1
+#cmakedefine CTRANIAN_ENABLE_THREADS 1
+
+/* Dependency information */
+#cmakedefine BINARYEN_FOUND 1
+#cmakedefine CMAKE_USE_PTHREADS_INIT 1
+
+/* Platform-specific definitions */
+#ifdef _WIN32
+#define CTRANIAN_PLATFORM_WINDOWS 1
+#elif defined(__APPLE__)
+#define CTRANIAN_PLATFORM_MACOS 1
+#elif defined(__linux__)
+#define CTRANIAN_PLATFORM_LINUX 1
+#endif
+
+/* Compiler-specific definitions */
+#ifdef __GNUC__
+#define CTRANIAN_COMPILER_GCC 1
+#elif defined(__clang__)
+#define CTRANIAN_COMPILER_CLANG 1
+#elif defined(_MSC_VER)
+#define CTRANIAN_COMPILER_MSVC 1
+#endif
+
+/* Debug/Release flags */
+#ifdef NDEBUG
+#define CTRANIAN_RELEASE_BUILD 1
+#else
+#define CTRANIAN_DEBUG_BUILD 1
+#endif
+
+/* Maximum limits */
+#define CTRANIAN_MAX_FUNCTIONS 65536
+#define CTRANIAN_MAX_IMPORTS 1024
+#define CTRANIAN_MAX_EXPORTS 1024
+#define CTRANIAN_MAX_MEMORY_SEGMENTS 1024
+#define CTRANIAN_MAX_TABLES 1024
+#define CTRANIAN_MAX_GLOBALS 1024
+#define CTRANIAN_MAX_TYPES 1024
+
+/* Default configuration values */
+#define CTRANIAN_DEFAULT_OPTIMIZATION_LEVEL 2
+#define CTRANIAN_DEFAULT_BOUNDS_CHECKING 1
+#define CTRANIAN_DEFAULT_RUNTIME "embedded"
+
+#endif /* CTRANIAN_CONFIG_H */
