@@ -139,11 +139,11 @@ if(CTRANIAN_ENABLE_THREADS)
     add_compile_definitions(CTRANIAN_ENABLE_THREADS=1)
 endif()
 
-# Testing (disabled during development)
-# if(CTRANIAN_BUILD_TESTS)
-#     enable_testing()
-#     add_subdirectory(tests)
-# endif()
+# Testing
+if(CTRANIAN_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 # Examples (disabled during development)
 # if(CTRANIAN_BUILD_EXAMPLES)

@@ -76,21 +76,28 @@ Type Analysis → Code Generation → C11 Output + Runtime
 
 ### ✅ Completed Foundation
 1. **Project Structure** - All directories and files created
-2. **CMake Configuration** - Build system with options
-3. **Public API Design** - Complete C interface specification
+2. **CMake Configuration** - Build system with options, Binaryen integration working
+3. **Public API Design** - Complete C interface specification with basic implementation
 4. **Core Headers** - All component interfaces defined
-5. **CLI Framework** - Command-line parsing and options
-6. **Runtime Foundation** - Memory management and trap handling
-7. **Testing Infrastructure** - Test structure and examples
-8. **Documentation** - README, project plan, contributing guide
-9. **CI/CD Pipeline** - GitHub Actions configuration
+5. **CLI Framework** - Command-line parsing and options, complete implementation
+6. **Runtime Foundation** - Memory management and trap handling (80% complete)
+7. **Testing Infrastructure** - Test structure with passing basic tests
+8. **Documentation** - README, project plan, implementation plan, contributing guide
+9. **Build System** - Successfully builds and tests pass
 
-### 🔄 In Progress (Next Session)
-1. **Binaryen Integration** - Connect parsing and optimization
-2. **Type System Implementation** - WASM to C type mapping logic
-3. **Core Translation Logic** - Main translation algorithms
-4. **Instruction Visitors** - Individual WASM instruction translation
-5. **Code Generation** - C output production
+### 🔄 Current Implementation Status (Detailed)
+- **Translator.cpp**: ✅ 85% complete - basic parsing, optimization, and orchestration logic
+- **TypeMapper.cpp**: ✅ 60% complete - basic type mappings, missing function signatures
+- **InstructionVisitor.cpp**: ❌ 10% complete - only stub methods exist
+- **CodeGenerator.cpp**: ❌ 10% complete - only stub methods exist
+- **ctransian_runtime.c**: ✅ 80% complete - memory management, error handling
+- **Runtime files**: ❌ Empty - memory.c, threads.c, exceptions.c, imports.c need implementation
+
+### 🔄 Next Session Priority Tasks
+1. **InstructionVisitor Implementation** - Start with constants, then basic arithmetic
+2. **CodeGenerator Implementation** - Generate proper C code output
+3. **TypeMapper Enhancement** - Complete function signature generation
+4. **Runtime Files** - Implement missing runtime components
 
 ### ⏳ Future Phases
 1. **Advanced Features** - SIMD, threading, GC support
@@ -163,25 +170,71 @@ git submodule update --init --recursive
 # No external Binaryen installation needed - it's vendored!
 ```
 
-## Next Development Session - Immediate Tasks
+## Next Development Session - Implementation Plan
 
-### Phase 1: Binaryen Integration
-1. **Fix Include Paths** - Resolve binaryen-c.h imports
-2. **Basic Parsing** - Implement WASM binary/text parsing
-3. **Module Validation** - Add WASM validation support
-4. **Error Handling** - Implement robust error reporting
+### **WebAssembly Instruction Implementation Strategy**
 
-### Phase 2: Type System Implementation  
-1. **Type Mapping** - Implement WASM to C type conversion
-2. **Function Signatures** - Generate C function prototypes
-3. **Memory Types** - Handle linear memory mapping
-4. **Reference Types** - Support funcref, externref, etc.
+Based on WebAssembly specification and practical translation needs, the implementation should follow this prioritized approach (see `docs/IMPLEMENTATION_PLAN.md` for details):
 
-### Phase 3: Core Translation Logic
-1. **Expression Visitor** - Implement traversal of Binaryen IR
-2. **Instruction Translation** - Convert individual WASM instructions
-3. **Control Flow** - Handle blocks, loops, branches
-4. **Function Translation** - Complete function body generation
+**Phase 0: Foundation (Start Here)**
+- **Constants**: `i32.const`, `i64.const`, `f32.const`, `f64.const`, `v128.const`
+- *Why first?* Every non-trivial program uses constants
+
+**Phase 1: Core MVP (Essential for any functional program)**
+1. **Parametric Instructions** - `drop`, `select` (stack manipulation)
+2. **Control Flow Instructions** - `nop`, `unreachable`, `block`, `loop`, `if`, `br`, `br_if`, `br_table`, `return`, `call`, `call_indirect` (program structure)
+3. **Variable Access Instructions** - `local.get`, `local.set`, `local.tee`, `global.get`, `global.set` (variables)
+
+**Phase 2: Data Operations (Essential for useful programs)**
+4. **Memory Instructions** - `i32.load`, `i64.load`, `f32.load`, `f64.load`, `i32.store`, `i64.store`, `f32.store`, `f64.store`, `memory.size`, `memory.grow` (data manipulation)
+5. **Basic Arithmetic Instructions** - `i32.add`, `i32.sub`, `i32.mul`, etc. (core computation)
+6. **Comparison Instructions** - `i32.eq`, `i32.ne`, `i32.lt_s/u`, etc. (conditionals)
+
+**Phase 3: Advanced Operations (Medium priority)**
+7. **Bitwise Instructions** - `i32.and`, `i32.or`, `i32.xor`, etc.
+8. **Conversion Instructions** - `i32.wrap_i64`, `i64.extend_i32_s/u`, etc.
+9. **Advanced Arithmetic** - `i32.div_s/u`, `i32.rem_s/u`, etc.
+
+**Phase 4-5: Advanced Features**
+10. **Atomic Instructions** (threading support)
+11. **SIMD Instructions** (conditional - if SIMD enabled)
+12. **Reference Type Instructions** (WasmGC proposal)
+
+### **Immediate Next Session Tasks**
+
+**First Priority - InstructionVisitor Constants:**
+```cpp
+// In src/core/instruction_visitor.cpp
+std::string InstructionVisitor::visitConstant(BinaryenExpressionRef expr) {
+    // 1. Get expression type using BinaryenExpressionGetType()
+    // 2. Get literal value using BinaryenExpressionGet*() functions
+    // 3. Generate appropriate C literal string
+    // 4. Return C code
+}
+```
+
+**Second Priority - Basic Arithmetic:**
+```cpp
+// Implement visitBinary() for add/sub/mul operations
+std::string InstructionVisitor::visitBinary(BinaryenExpressionRef expr) {
+    // 1. Get operation using BinaryenExpressionGetOp()
+    // 2. Visit left and right operands
+    // 3. Generate appropriate C binary operation
+    // 4. Return C code
+}
+```
+
+**Third Priority - Variable Access:**
+```cpp
+// Implement local.get, local.set, global.get, global.set
+// These are straightforward variable access patterns
+```
+
+### **Success Metrics**
+- **Phase 0 Success**: Constants translate correctly
+- **Phase 1 Success**: Simple functions with variables and control flow work
+- **Phase 2 Success**: Mathematical functions and memory operations work
+- **Final Success**: Complete MVP WebAssembly-to-C translator
 
 ## Commit Guidelines
 
