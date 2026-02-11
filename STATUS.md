@@ -141,7 +141,7 @@ wacgen/
 ### Testing Strategy
 - Compilation-only testing initially
 - Test files in WebAssembly text format (.wat)
-- Use WABT's `wasm-as` for assembly
+- Use WABT's `wat2wasm` for assembly
 
 ## Known Issues
 
@@ -156,7 +156,7 @@ wacgen/
   - Required for: `BinaryenModuleRead()`, instruction traversal
 - **WABT**: WebAssembly text format tools  
   - Version: 1.0.39+ (submodule at commit d09cffc7)
-  - Required for: test case assembly (`wasm-as`)
+  - Required for: test case assembly (`wat2wasm`)
 
 ## Tools and Environment
 

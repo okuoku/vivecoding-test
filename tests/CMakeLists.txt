@@ -1,18 +1,12 @@
 # Test CMakeLists.txt for wacgen
 # Assembles .wat files to .wasm using WABT's wasm-as
 
-# Find WABT tools (will be built as dependency)
-find_program(WASM_AS_EXECUTABLE wasm-as PATHS ${CMAKE_BINARY_DIR}/ext/wabt NO_DEFAULT_PATH)
-
 # Collect all .wat files
 file(GLOB_RECURSE WAT_FILES "*.wat")
 
 # Add dependency on WABT tools
-if(TARGET wabt::wasm-as)
-    set(WASM_AS_EXECUTABLE $<TARGET_FILE:wabt::wasm-as>)
-else()
-    # Create a dummy target if wabt not available
-    add_custom_target(wabt_tools)
+if(NOT TARGET wat2wasm)
+    message(FATAL_ERROR "wat2wasm not found in the project")
 endif()
 
 # Create .wasm files from .wat files
@@ -20,23 +14,13 @@ foreach(WAT_FILE ${WAT_FILES})
     get_filename_component(FILE_NAME ${WAT_FILE} NAME_WE)
     get_filename_component(FILE_DIR ${WAT_FILE} DIRECTORY)
     set(WASM_FILE ${FILE_DIR}/${FILE_NAME}.wasm)
-    
-    if(TARGET wabt::wasm-as)
-        add_custom_command(
-            OUTPUT ${WASM_FILE}
-            COMMAND ${WASM_AS_EXECUTABLE} ${WAT_FILE} -o ${WASM_FILE}
-            DEPENDS ${WAT_FILE} wabt::wasm-as
-            COMMENT "Assembling ${WAT_FILE} to ${WASM_FILE}"
-            VERBATIM
-        )
-    else()
-        add_custom_command(
-            OUTPUT ${WASM_FILE}
-            COMMAND echo "wasm-as not available, skipping ${WAT_FILE}"
-            DEPENDS ${WAT_FILE}
-            COMMENT "Skipping ${WAT_FILE} - WABT not available"
-        )
-    endif()
+
+    add_custom_command(
+        OUTPUT ${WASM_FILE}
+        COMMAND wat2wasm ${WAT_FILE} -o ${WASM_FILE}
+        DEPENDS ${WAT_FILE}
+        COMMENT "Assembling ${WAT_FILE} to ${WASM_FILE}"
+    )
     
     list(APPEND WASM_FILES ${WASM_FILE})
 endforeach()

@@ -28,7 +28,7 @@ Project's test infrastructure:
 
 - `test/**/*.wat` contains test suite written in WebAssembly
   text format.
-- Vendored Wabt `wasm-as` command should be used to assemble
+- Vendored Wabt `wat2wasm` command should be used to assemble
   WebAssembly sources into `.wasm` binary to be used as test cases
 - Generated C99 sources should be compiled with same compiler
   as `wacgen` command compiled
@@ -219,7 +219,7 @@ For each instruction, document:
   )
 )
 ```
-- Add `tests/CMakeLists.txt` to assemble `.wat` files using `wasm-as`
+- Add `tests/CMakeLists.txt` to assemble `.wat` files using `wat2wasm`
 - Implement C99 source and header generation for that function
 - Generated C function template:
 ```c
