@@ -18,8 +18,9 @@ parse WebAssembly.
 
 Project's build infrastructure:
 
-- Uses CMake to build entire project including tests
+- Uses CMake 3.20+ to build entire project including tests
 - Add bundled(submoduled) `binaryen` and `wabt` as `add_subdirectory`
+- Use latest stable versions of vendored dependencies
 - Vendored Binaryen should be used to keep stability
 - Vendored WABT should be used for tests(only)
 
@@ -31,6 +32,36 @@ Project's test infrastructure:
   WebAssembly sources into `.wasm` binary to be used as test cases
 - Generated C99 sources should be compiled with same compiler
   as `wacgen` command compiled
+- Test verification: compilation checking only (no runtime execution)
+- Test data: minimal test cases for easy review
+
+## Directory Structure
+
+```
+wacgen/
+├── CMakeLists.txt
+├── src/
+│   ├── main.c (CLI entry point)
+│   ├── wacgen_core.c (conversion logic)
+│   ├── wacgen_core.h
+│   └── codegen/
+│       ├── codegen.h
+│       ├── codegen.c
+│       └── templates.h (C function templates)
+├── runtime/
+│   ├── wacgen_rt.c
+│   └── wacgen_rt.h
+├── tests/
+├── docs/plan/
+│   ├── 01_Framework.md
+│   └── 02_wasm/
+│       └── [instruction groups].md
+├── ext/
+│   ├── binaryen (submodule)
+│   └── wabt (submodule)
+├── STATUS.md
+└── PLAN.md
+```
 
 
 ### `wacgen` CLI
@@ -49,13 +80,23 @@ Generated source will implement for each original WebAssembly
 module's functions and variables.
 
 - Every function will take arguments that original module
-  decleared and a pointer to context(`wacgenrt_ctx`)
+  declared and a pointer to context(`wacgenrt_ctx`)
   - The context should be the first argument
 - A special function that returns array of:
   - functions
   - variables
   that will be named as `__wacgen_<basename>_init`
   where `<basename>` is specified in the commandline
+
+### Code generation conventions
+
+- Symbol naming: `snake_case` for generated symbols, preserve original WebAssembly module symbols
+- WebAssembly module symbols prefixed with `__{basename}_` where `{basename}` is CLI-specified
+- Formatting: TAB is softtab in 4 spaces (concise formatting)
+- Error handling: leave to users
+- Memory bounds checking: C macro with no-op implementation
+- Abort calls: wrapped in C macro (e.g., `WACGEN_ABORT()`)
+- Context structure (`wacgenrt_ctx`): contains pointers to functions, memories, tables
 
 ### `wacgen_rt` Runtime Library
 
@@ -64,16 +105,20 @@ separate shared library `wacgen_rt` will be implemented.
 
 It will contain:
 
-- `wacgenrt_ctx_init` -- Initializes context
+- `wacgenrt_ctx_init` -- Initializes context with memory, tables, globals
 - `wacgenrt_ctx_destroy` -- Destroys context
+- `wacgenrt_grow_memory` -- Memory growth management
+- `wacgenrt_table_get` -- Table operations for indirect calls
+- `wacgenrt_table_set` -- Table operations for indirect calls
+
+Memory and safety macros:
+
+- `WACGEN_CHECK_BOUNDS(ptr, size)` -- Memory bound checking (no-op implementation)
+- `WACGEN_ABORT()` -- Abort wrapper macro
 
 Every generated function will take a pointer to opaque structure
-`wacgenrt_ctx` to denote its context.
-
-`wacgen_rt` will implements callbacks that needed to be called from
-generated C99 sources such as:
-
-- `wacgenrt_grow_memory` -- To request growing memory
+`wacgenrt_ctx` to denote its context. Context structure contains
+pointers to functions, memories, tables.
 
 ### Usage exsample: Simple conversion
 
@@ -130,43 +175,99 @@ implement" strategy here.
 
 Write `docs/plan/01_Framework.md` that should contain:
 
-- Binaryen C API that need to be used to load WebAssembly
-  and walk its function/variable and its instructions
-- C function templates that should be part of generated C99 code
+### Key Binaryen C API Functions to Use:
+- `BinaryenModuleRead()` - Load WebAssembly binary
+- `BinaryenModuleDispose()` - Clean up module
+- `BinaryenModuleGetNumFunctions()` - Count functions
+- `BinaryenModuleGetFunction()` - Access individual functions
+- `BinaryenFunctionGetNumParams()` - Get parameter count
+- `BinaryenFunctionGetNumResults()` - Get return value count
+- `BinaryenFunctionGetNumLocals()` - Get local variable count
+- `BinaryenFunctionGetBody()` - Get function body expression
+- `BinaryenExpressionGetId()` - Identify instruction types
+- `BinaryenExpressionGetChildren()` - Walk instruction tree
+
+### C Function Templates:
+- Function template for each WebAssembly function
+- Initialization function template (`__wacgen_{basename}_init`)
+- Context structure definitions
+- Memory and safety macros
 
 ## Phase2: Document for WebAssembly instructions
 
-- Group WebAssembly instructions into several groups(branch,
-  integer arithmetic, floating point arithmetic, SIMD, exception
-  handling, ...) and write their:
-    - Binaryen C API instruction symbol
-    - Its specification
-  Into `docs/plan/02_wasm/{group name here}.md`
+Group WebAssembly instructions logically, prioritizing implementation convenience:
+
+- `01_control_flow.md` - Basic control flow (`nop`, `block`, `loop`, `if`, `br`, `br_if`, `return`)
+- `02_integer.md` - Integer arithmetic (`i32/i64` operations, bitwise, shifts)
+- `03_float.md` - Floating point arithmetic (`f32/f64` operations, comparisons, conversions)
+- `04_memory.md` - Memory operations (`load`, `store`, `memory.size`, `memory.grow`)
+- `05_simd.md` - SIMD operations (vector operations, lane access)
+- `06_advanced.md` - Advanced features (atomic ops, reference types, exception handling)
+
+For each instruction, document:
+- Binaryen C API instruction symbol
+- WebAssembly specification summary
+- Translation strategy to C
 
 ## Phase3: Implement simple `nop` module conversion
 
-- Write `.wat` file that contains single function with `nop` (only)
-  and place it under `tests` directory
-- Add `tests/CMakeLists.txt` to assembles that `.wat` file
+- Write minimal `.wat` file containing single function with `nop` only:
+```wat
+(module
+  (func $nop_func (export "nop_func")
+    nop
+  )
+)
+```
+- Add `tests/CMakeLists.txt` to assemble `.wat` files using `wasm-as`
 - Implement C99 source and header generation for that function
-- Make sure we can test the project with them
+- Generated C function template:
+```c
+void __{basename}_nop_func(wacgenrt_ctx* ctx) {
+    // WebAssembly nop -> empty statement in C
+}
+```
+- Test compilation of generated code
 
 ## Phase4: Implement branch(control flow) instructions
 
-- Write `.wat` files that contains branch instructions in addition
-  of `nop`
-- Add them to `test/` and connect these to the buildsystem
+- Write `.wat` files with control flow instructions:
+  - Simple if-then blocks
+  - Loop constructs
+  - Branch targets
+  - Function returns with values
+- Add them to `test/` and connect to buildsystem
 - Implement C99 source generation for these instructions
+- Test compilation of generated code
 
 ## Phase5: Extend instruction support
 
-- Pick any unimplemented instruction group that documented in the
-  Phase2
-- Write `.wat` files that contains instructions in chosen group
-- Implement these instructions conversions
+- Pick any unimplemented instruction group documented in Phase2
+- Write minimal `.wat` test files for that group
+- Add CMake build rules for new tests
+- Implement translation logic for instructions
+- Test compilation only (no runtime execution needed)
+- Update `STATUS.md` with progress
 
-Repeat Phase5 until every Phase2 documented instructions being
-implemented and tested.
+Repeat Phase5 until all Phase2 documented instructions are implemented and tested.
 
-Write and Update `/STATUS.md` to denote current implementation 
-status.
+### Status Tracking
+
+Maintain `STATUS.md` with:
+```markdown
+# Implementation Status
+
+## Completed Features
+- [x] Project structure and CMake setup
+- [x] Phase 1: Framework documentation  
+- [x] Phase 2: Instruction grouping
+- [x] Phase 3: NOP conversion
+- [ ] Phase 4: Control flow instructions
+- [ ] Phase 5: Additional instruction groups
+
+## Supported WebAssembly Instructions
+| Group | Instructions | Status |
+|-------|-------------|---------|
+| Control Flow | nop, block, loop | 🔄 In Progress |
+| Integer | i32.add, i32.sub | ⏳ Not Started |
+```
