@@ -28,8 +28,21 @@ void wacgen_dispose_module(BinaryenModuleRef module);
 bool wacgen_generate_c(wacgen_ctx* ctx, const char* basename, const char* wasm_file);
 bool wacgen_generate_function(wacgen_ctx* ctx, const char* func_name);
 
+// Expression translation functions
+bool wacgen_translate_expression(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_if(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_return(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_const(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_local_get(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_local_set(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_binary(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+
 // Utility functions
 bool wacgen_is_nop_function(BinaryenModuleRef module, const char* func_name);
+void wacgen_write_indent(FILE* file, int level);
+const char* wacgen_get_type_string(BinaryenType type);
+bool wacgen_generate_function_params(FILE* file, BinaryenFunctionRef func);
+bool wacgen_generate_local_vars(FILE* file, BinaryenFunctionRef func);
 
 #ifdef __cplusplus
 }

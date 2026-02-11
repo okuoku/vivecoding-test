@@ -10,6 +10,11 @@ endif()
 # Test cases
 set(WAT_FILES
     nop_test.wat
+    if_test.wat
+    loop_test.wat
+    branch_test.wat
+    return_test.wat
+    block_test.wat
 )
 
 # Convert .wat files to .wasm
@@ -50,8 +55,80 @@ add_custom_target(test_nop_compilation
     COMMENT "Testing compilation of generated C code"
 )
 
+# Test: generate C code from control flow tests
+add_custom_target(test_if_conversion
+    COMMAND ${CMAKE_BINARY_DIR}/wacgen -b if_test_generated ${CMAKE_CURRENT_BINARY_DIR}/if_test.wasm
+    DEPENDS wacgen ${CMAKE_CURRENT_BINARY_DIR}/if_test.wasm
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing if function conversion"
+)
+
+add_custom_target(test_loop_conversion
+    COMMAND ${CMAKE_BINARY_DIR}/wacgen -b loop_test_generated ${CMAKE_CURRENT_BINARY_DIR}/loop_test.wasm
+    DEPENDS wacgen ${CMAKE_CURRENT_BINARY_DIR}/loop_test.wasm
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing loop function conversion"
+)
+
+add_custom_target(test_branch_conversion
+    COMMAND ${CMAKE_BINARY_DIR}/wacgen -b branch_test_generated ${CMAKE_CURRENT_BINARY_DIR}/branch_test.wasm
+    DEPENDS wacgen ${CMAKE_CURRENT_BINARY_DIR}/branch_test.wasm
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing branch function conversion"
+)
+
+add_custom_target(test_return_conversion
+    COMMAND ${CMAKE_BINARY_DIR}/wacgen -b return_test_generated ${CMAKE_CURRENT_BINARY_DIR}/return_test.wasm
+    DEPENDS wacgen ${CMAKE_CURRENT_BINARY_DIR}/return_test.wasm
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing return function conversion"
+)
+
+add_custom_target(test_block_conversion
+    COMMAND ${CMAKE_BINARY_DIR}/wacgen -b block_test_generated ${CMAKE_CURRENT_BINARY_DIR}/block_test.wasm
+    DEPENDS wacgen ${CMAKE_CURRENT_BINARY_DIR}/block_test.wasm
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing block function conversion"
+)
+
+# Test: compile generated C code for control flow tests
+add_custom_target(test_if_compilation
+    COMMAND ${CMAKE_C_COMPILER} -I${CMAKE_SOURCE_DIR}/runtime -c if_test_generated.c -o if_test_generated.o
+    DEPENDS test_if_conversion
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing compilation of generated if C code"
+)
+
+add_custom_target(test_loop_compilation
+    COMMAND ${CMAKE_C_COMPILER} -I${CMAKE_SOURCE_DIR}/runtime -c loop_test_generated.c -o loop_test_generated.o
+    DEPENDS test_loop_conversion
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing compilation of generated loop C code"
+)
+
+add_custom_target(test_branch_compilation
+    COMMAND ${CMAKE_C_COMPILER} -I${CMAKE_SOURCE_DIR}/runtime -c branch_test_generated.c -o branch_test_generated.o
+    DEPENDS test_branch_conversion
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing compilation of generated branch C code"
+)
+
+add_custom_target(test_return_compilation
+    COMMAND ${CMAKE_C_COMPILER} -I${CMAKE_SOURCE_DIR}/runtime -c return_test_generated.c -o return_test_generated.o
+    DEPENDS test_return_conversion
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing compilation of generated return C code"
+)
+
+add_custom_target(test_block_compilation
+    COMMAND ${CMAKE_C_COMPILER} -I${CMAKE_SOURCE_DIR}/runtime -c block_test_generated.c -o block_test_generated.o
+    DEPENDS test_block_conversion
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Testing compilation of generated block C code"
+)
+
 # Run all tests
 add_custom_target(run_tests
-    DEPENDS test_nop_compilation
+    DEPENDS test_nop_compilation test_if_compilation test_loop_compilation test_branch_compilation test_return_compilation test_block_compilation
     COMMENT "All tests completed successfully"
 )
