@@ -271,3 +271,10 @@ Maintain `STATUS.md` with:
 | Control Flow | nop, block, loop | 🔄 In Progress |
 | Integer | i32.add, i32.sub | ⏳ Not Started |
 ```
+
+### Development iteration
+
+On development iteration, configure the project on `/build`
+directory. This directory must not be commited to the Git history.
+(already added in `.gitignore`)
+
