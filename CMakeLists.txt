@@ -17,13 +17,12 @@ add_executable(wacgen)
 target_sources(wacgen PRIVATE
     src/main.c
     src/wacgen_core.c
-    src/codegen/codegen.c
 )
 
 target_include_directories(wacgen PRIVATE
     src
-    src/codegen
     ext/binaryen/src
+    runtime
 )
 
 # Link with Binaryen
