@@ -1,140 +1,189 @@
-# wacgen Conversion Framework
+# Wacgen Framework Documentation
 
-This document describes the core framework for converting WebAssembly modules to C99 source code using Binaryen's C API.
+This document describes the core framework for `wacgen`, including Binaryen C API usage and C function templates for WebAssembly to C translation.
 
-## Key Binaryen C API Functions to Use
+## Key Binaryen C API Functions
 
-### Module Operations
-- `BinaryenModuleRead()` - Load WebAssembly binary from memory buffer
-- `BinaryenModuleDispose()` - Clean up module and free resources
-- `BinaryenModuleValidate()` - Validate module structure
+### Module Loading and Cleanup
+- `BinaryenModuleRead()` - Load WebAssembly binary from buffer
+- `BinaryenModuleDispose()` - Clean up module and free memory
 
-### Function Information
-- `BinaryenModuleGetNumFunctions()` - Get total number of functions in module
-- `BinaryenModuleGetFunction()` - Get function by index
-- `BinaryenFunctionGetName()` - Get function name string
+### Module Information
+- `BinaryenModuleGetNumFunctions()` - Get total function count in module
+- `BinaryenModuleGetFunction()` - Access individual function by index
+- `BinaryenModuleGetNumGlobals()` - Get global variable count
+- `BinaryenModuleGetNumTables()` - Get table count
+- `BinaryenModuleGetNumMemorySegments()` - Get memory segment count
+
+### Function Analysis
+- `BinaryenFunctionGetName()` - Get function name/symbol
 - `BinaryenFunctionGetNumParams()` - Get parameter count
+- `BinaryenFunctionGetParamType()` - Get parameter type by index
 - `BinaryenFunctionGetNumResults()` - Get return value count
+- `BinaryenFunctionGetResultType()` - Get return type
 - `BinaryenFunctionGetNumLocals()` - Get local variable count
-- `BinaryenFunctionGetBody()` - Get function body as expression tree
+- `BinaryenFunctionGetLocalType()` - Get local variable type by index
+- `BinaryenFunctionGetBody()` - Get function body expression tree
 
 ### Expression Tree Traversal
-- `BinaryenExpressionGetId()` - Identify instruction types (BinaryenNopId, BinaryenAddId, etc.)
-- `BinaryenExpressionGetChildren()` - Get child expressions from parent
+- `BinaryenExpressionGetId()` - Identify instruction type (BinaryenNop, BinaryenAdd, etc.)
+- `BinaryenExpressionGetType()` - Get expression result type
+- `BinaryenExpressionGetChildren()` - Get child expressions for tree traversal
 - `BinaryenBlockGetName()` - Get block label name
 - `BinaryenIfGetCondition()` - Get if condition expression
+- `BinaryenIfGetIfTrue()` - Get if true branch
+- `BinaryenIfGetIfFalse()` - Get if false branch
 
-### Type Information
-- `BinaryenExpressionGetType()` - Get expression type
-- `BinaryenFunctionGetType()` - Get function signature type
+### Type System
+- `BinaryenTypeInt32()` - i32 type
+- `BinaryenTypeInt64()` - i64 type
+- `BinaryenTypeFloat32()` - f32 type
+- `BinaryenTypeFloat64()` - f64 type
+- `BinaryenTypeNone()` - void/no result type
+- `BinaryenTypeAreEqual()` - Check type equality
 
 ## C Function Templates
 
-### WebAssembly Function Template
+### Generated Function Template
+
 ```c
-void __{basename}_{function_name}(wacgenrt_ctx* ctx, {params}) {
-    // Local variables
-    {local_declarations}
+// Template for WebAssembly function with parameters
+return_type __{basename}_{func_name}(wacgenrt_ctx* ctx, param1_type param1, param2_type param2) {
+    // Local variable declarations
+    local_var1_type local1;
+    local_var2_type local2;
     
-    // Function body translation
-    {translated_instructions}
+    // WebAssembly instruction translation
+    // Each instruction becomes corresponding C code
+    
+    // Return value (if any)
+    return result;
 }
 ```
 
-### Initialization Function Template
+### Void Function Template
+
 ```c
+// Template for WebAssembly function with no return value
+void __{basename}_{func_name}(wacgenrt_ctx* ctx, param1_type param1, param2_type param2) {
+    // Function body
+    // No return statement needed
+}
+```
+
+### Parameter-only Function Template
+
+```c
+// Template for WebAssembly function with no parameters
+return_type __{basename}_{func_name}(wacgenrt_ctx* ctx) {
+    // Function body with no external parameters
+    return result;
+}
+```
+
+### Simple Void No-params Template
+
+```c
+// Template for simplest WebAssembly function
+void __{basename}_{func_name}(wacgenrt_ctx* ctx) {
+    // Function body
+}
+```
+
+## Context Structure Definition
+
+```c
+// Runtime context structure
 typedef struct {
-    const char* name;
-    void* ptr;
-} __wacgen_{basename}_symbol_t;
-
-__wacgen_{basename}_symbol_t* __wacgen_{basename}_init(void) {
-    static __wacgen_{basename}_symbol_t symbols[] = {
-        {{"function1"}, __{basename}_function1},
-        {{"function2"}, __{basename}_function2},
-        // ... more symbols
-        {NULL, NULL}
-    };
-    return symbols;
-}
-```
-
-### Context Structure Definitions
-```c
-// Runtime context structure (defined in wacgen_rt.h)
-struct wacgenrt_ctx {
-    uint8_t* memory;       // Linear memory
-    size_t memory_size;    // Current memory size in bytes
-    size_t memory_pages;   // Current memory pages
-    void** table;          // Function table for indirect calls
+    void* memory;           // Linear memory pointer
+    size_t memory_size;     // Current memory size in bytes
+    void** table;          // Indirect function call table
     size_t table_size;     // Table size
-    void** globals;        // Global variables
-    size_t num_globals;    // Number of globals
-};
+    void* globals;         // Global variables storage
+} wacgenrt_ctx;
 ```
 
-### Memory and Safety Macros
+## Memory and Safety Macros
+
 ```c
 // Memory bounds checking (no-op implementation)
-#define WACGEN_CHECK_BOUNDS(ptr, size) do {} while(0)
+#define WACGEN_CHECK_BOUNDS(ptr, size) ((void)0)
 
-// Abort wrapper
+// Abort wrapper macro
 #define WACGEN_ABORT() do { abort(); } while(0)
 
-// Memory access macros
-#define WACGEN_LOAD_I32(ctx, addr) (*(int32_t*)((ctx)->memory + (addr)))
-#define WACGEN_STORE_I32(ctx, addr, val) (*(int32_t*)((ctx)->memory + (addr)) = (val))
+// Memory access helpers
+#define WACGEN_LOAD_I32(offset) (*(int32_t*)((uint8_t*)ctx->memory + (offset)))
+#define WACGEN_STORE_I32(offset, value) (*(int32_t*)((uint8_t*)ctx->memory + (offset)) = (value))
 ```
 
-## Code Generation Strategy
+## Module Initialization Function Template
 
-### Translation Pipeline
-1. **Parse WebAssembly module** using Binaryen
-2. **Extract function information** (name, parameters, locals, body)
-3. **Generate C function signatures** based on WebAssembly types
-4. **Translate expression tree** to C statements recursively
-5. **Generate initialization function** with symbol table
-6. **Write C source and header files**
-
-### Type Mapping
-- `i32` → `int32_t`
-- `i64` → `int64_t` 
-- `f32` → `float`
-- `f64` → `double`
-
-### Control Flow Translation
-- `block` → C block with labeled goto targets
-- `loop` → C while(1) loop with break/continue
-- `if` → C if/else statement
-- `br` → goto label
-- `br_if` → conditional goto
-
-## Error Handling
-
-### Error Codes
 ```c
-typedef enum {
-    WACGEN_SUCCESS = 0,
-    WACGEN_ERROR_INVALID_INPUT = 1,
-    WACGEN_ERROR_PARSE_FAILED = 2,
-    WACGEN_ERROR_CODEGEN_FAILED = 3,
-    WACGEN_ERROR_MEMORY = 4
-} wacgen_result_t;
+// Module initialization function
+typedef struct {
+    const char* name;
+    void* func_ptr;
+} wacgen_func_info_t;
+
+typedef struct {
+    const char* name;
+    void* global_ptr;
+    BinaryenType type;
+} wacgen_global_info_t;
+
+// Template for initialization function
+void __wacgen_{basename}_init(wacgenrt_ctx* ctx, 
+                              wacgen_func_info_t** functions, 
+                              size_t* num_functions,
+                              wacgen_global_info_t** globals, 
+                              size_t* num_globals) {
+    static wacgen_func_info_t exported_functions[] = {
+        { "exported_func1", __{basename}_exported_func1 },
+        { "exported_func2", __{basename}_exported_func2 },
+        // Add more exported functions here
+    };
+    
+    static wacgen_global_info_t exported_globals[] = {
+        { "global1", &global1_var, BinaryenTypeInt32() },
+        { "global2", &global2_var, BinaryenTypeInt64() },
+        // Add more exported globals here
+    };
+    
+    *functions = exported_functions;
+    *num_functions = sizeof(exported_functions) / sizeof(exported_functions[0]);
+    *globals = exported_globals;
+    *num_globals = sizeof(exported_globals) / sizeof(exported_globals[0]);
+}
 ```
 
-### Error Reporting
-- Use `fprintf(stderr, ...)` for error messages
-- Return appropriate error codes from functions
-- Cleanup resources on error paths
+## Type Mapping WebAssembly to C
 
-## Memory Management
+| WebAssembly Type | C Type | Binaryen Type |
+|------------------|--------|---------------|
+| i32              | int32_t | BinaryenTypeInt32() |
+| i64              | int64_t | BinaryenTypeInt64() |
+| f32              | float   | BinaryenTypeFloat32() |
+| f64              | double  | BinaryenTypeFloat64() |
+| void             | void    | BinaryenTypeNone() |
 
-### Binaryen Resource Management
-- Always call `BinaryenModuleDispose()` when done
-- Don't free expressions manually (handled by module)
-- Copy string values immediately if needed long-term
+## Translation Strategy
 
-### Code Generator Memory Management
-- Use malloc/free for dynamic structures
-- Implement cleanup functions for context objects
-- Check return values of memory allocations
+### Expression Tree Processing
+1. Traverse expression tree depth-first using `BinaryenExpressionGetChildren()`
+2. For each node, identify instruction type using `BinaryenExpressionGetId()`
+3. Generate corresponding C code based on instruction type
+4. Handle type conversions between WebAssembly and C types
+
+### Function Generation Steps
+1. Extract function signature using `BinaryenFunctionGet*` APIs
+2. Generate C function declaration with appropriate types
+3. Process function body expression tree
+4. Generate C statements for each WebAssembly instruction
+5. Add return statement if function has return value
+
+### Symbol Naming Conventions
+- Exported WebAssembly functions: `__{basename}_{func_name}`
+- Local WebAssembly functions: `__{basename}_{func_name}_local`
+- Global variables: `__{basename}_{global_name}`
+- Labels/branches: `__{basename}_{label_name}`
