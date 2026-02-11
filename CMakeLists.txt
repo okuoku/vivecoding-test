@@ -4,17 +4,12 @@ project(wacgen VERSION 1.0.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Check for Binaryen availability
-add_definitions(-DHAVE_BINARYEN)
+# Add Binaryen
+add_subdirectory(ext/binaryen)
 
-# Add subdirectories for dependencies
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ext/binaryen)
-    add_subdirectory(ext/binaryen)
-endif()
-
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ext/wabt)
-    add_subdirectory(ext/wabt)
-endif()
+# Add WABT without tests
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+add_subdirectory(ext/wabt)
 
 # Main wacgen executable
 add_executable(wacgen)
@@ -30,9 +25,7 @@ target_include_directories(wacgen PRIVATE
 )
 
 # Link with Binaryen
-if(TARGET binaryen)
-    target_link_libraries(wacgen PRIVATE binaryen)
-endif()
+target_link_libraries(wacgen PRIVATE binaryen)
 
 # Runtime library
 add_library(wacgen_rt SHARED)

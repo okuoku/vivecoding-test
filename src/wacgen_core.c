@@ -4,42 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef HAVE_BINARYEN
-// Stub implementation for testing without Binaryen
-typedef void* BinaryenModuleRef;
-typedef void* BinaryenFunctionRef;
-typedef void* BinaryenExportRef;
-typedef void* BinaryenExpressionRef;
-
-typedef enum {
-    BinaryenNop = 0
-} BinaryenExpressionId;
-
-// Stub functions
-BinaryenModuleRef BinaryenModuleRead(const char* filename) { 
-    printf("Stub: Reading module %s\n", filename);
-    return (void*)1; // Return non-NULL to indicate success
-}
-void BinaryenModuleDispose(BinaryenModuleRef module) { 
-    printf("Stub: Disposing module\n");
-}
-int BinaryenModuleGetNumFunctions(BinaryenModuleRef module) { return 1; }
-BinaryenFunctionRef BinaryenModuleGetFunction(BinaryenModuleRef module, int index) { 
-    printf("Stub: Getting function %d\n", index);
-    return (void*)1; 
-}
-const char* BinaryenFunctionGetName(BinaryenFunctionRef func) { return "nop_func"; }
-BinaryenExportRef BinaryenModuleGetExport(BinaryenModuleRef module, const char* name) { 
-    printf("Stub: Checking export for %s\n", name);
-    return (void*)1; // Return non-NULL to indicate export exists
-}
-BinaryenExpressionRef BinaryenFunctionGetBody(BinaryenFunctionRef func) { return (void*)1; }
-BinaryenExpressionId BinaryenExpressionGetId(BinaryenExpressionRef expr) { 
-    printf("Stub: Getting expression ID\n");
-    return 0; // BinaryenNop
-}
-#endif
-
 // Generate basename from input file path if not provided
 static char* extract_basename(const char* input_file, const char* provided_basename) {
     if (provided_basename) {
@@ -117,7 +81,6 @@ wacgen_result_t wacgen_convert(const char* input_file,
     
     wacgen_result_t result = WACGEN_SUCCESS;
     
-#ifdef HAVE_BINARYEN
     // Read WebAssembly module
     BinaryenModuleRef module = BinaryenModuleRead(input_file);
     if (!module) {
@@ -192,11 +155,6 @@ wacgen_result_t wacgen_convert(const char* input_file,
     BinaryenModuleDispose(module);
     
     printf("Generated: %s, %s\n", output_c_file, output_h_file);
-    
-#else
-    fprintf(stderr, "Error: Binaryen support not available\n");
-    result = WACGEN_ERROR_PARSE_FAILED;
-#endif
 
 cleanup:
     free(module_basename);
