@@ -43,11 +43,15 @@
 - [x] Implement export-based function discovery
 - [x] Add automated tests for conversion and compilation
 
-### Phase 4: Control Flow Instructions ⏳
-- [ ] Implement block/loop/if translation
-- [ ] Add branch instruction support
-- [ ] Create test cases for control flow
-- [ ] Test compilation only (no runtime)
+### Phase 4: Control Flow Instructions ✅
+- [x] Implement block/loop/if translation
+- [x] Add branch instruction support (br, br_if, return, unreachable)
+- [x] Create test cases for control flow (if_simple, loop_simple, block_simple, branch_simple, return_value)
+- [x] Test compilation only (no runtime)
+- [x] Implement expression generation for all control flow instructions
+- [x] Add support for function signatures with parameters and return values
+- [x] Add support for binary operations and constants
+- [x] Add support for local variable operations (local.get, local.set, local.tee)
 
 ## Not Started
 
@@ -62,8 +66,8 @@
 
 | Group | Instructions | Status | Notes |
 |-------|-------------|---------|-------|
-| Control Flow | nop, block, loop, if, br, br_if, return | ✅ Partial | nop implemented in Phase 3 |
-| Integer | i32.add, i32.sub, i32.mul, etc. | ⏳ Not Started | Phase 5 |
+| Control Flow | nop, block, loop, if, br, br_if, return, unreachable | ✅ Complete | All implemented in Phase 4 |
+| Integer | i32.add, i32.sub, i32.mul, i32.eq, i32.ne, i32.lt, i32.le, i32.gt, i32.ge | ✅ Partial | Basic binary ops implemented |
 | Float | f32.add, f32.sub, f32.mul, etc. | ⏳ Not Started | Phase 5 |
 | Memory | load, store, memory.size, memory.grow | ⏳ Not Started | Phase 5 |
 | SIMD | v128 operations | ⏳ Not Started | Optional |
@@ -103,21 +107,24 @@ wacgen/
 
 ## Next Steps
 
-1. **Immediate**: Implement Phase 4 - Control flow instructions
-   - Implement block/loop/if translation
-   - Add branch instruction support
-   - Create test cases for control flow
+1. **Completed**: Phase 4 - Control flow instructions ✅
+   - ✅ Implemented block/loop/if translation
+   - ✅ Added branch instruction support (br, br_if, return, unreachable)
+   - ✅ Created test cases for control flow
+   - ✅ Verified expression generation system
+   - ✅ Added function signature support
+   - ✅ Added basic integer operations
+
+2. **Short Term**: Start Phase 5 - Integer arithmetic instructions
+   - Complete remaining integer arithmetic group
+   - Add more binary operations (div, rem, and, or, xor, shifts)
+   - Add test cases for all integer operations
    - Verify generated C code compiles
 
-2. **Short Term**: Complete Phase 4 - Control flow
-   - Implement control flow instruction translation
-   - Add test cases for branching logic
-   - Verify generated C code compiles
-
-3. **Medium Term**: Phase 5 - Additional instructions
-   - Implement integer arithmetic group
-   - Add floating-point support
+3. **Medium Term**: Phase 5 - Additional instruction groups
+   - Implement floating-point support
    - Implement memory operations
+   - Consider SIMD and advanced features as optional
 
 ## Development Notes
 
