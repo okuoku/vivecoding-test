@@ -23,6 +23,8 @@ Project's build infrastructure:
 - Use latest stable versions of vendored dependencies
 - Vendored Binaryen should be used to keep stability
 - Vendored WABT should be used for tests(only)
+- Project should be configured at `build/` directory with Ninja generator
+  with CMake. (`.clangd` includes hardcoded path to this directory)
 
 Project's test infrastructure:
 
