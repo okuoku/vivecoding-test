@@ -18,6 +18,9 @@ typedef struct {
     const char* basename;
     FILE* header_file;
     FILE* source_file;
+    int block_counter;
+    int block_depth[16];  // Track block nesting up to 16 levels
+    int current_depth;
 } wacgen_ctx;
 
 // Module loading functions
@@ -36,6 +39,10 @@ bool wacgen_translate_const(wacgen_ctx* ctx, BinaryenExpressionRef expr, int ind
 bool wacgen_translate_local_get(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
 bool wacgen_translate_local_set(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
 bool wacgen_translate_binary(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_block(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_br(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_br_if(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
+bool wacgen_translate_loop(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level);
 
 // Utility functions
 bool wacgen_is_nop_function(BinaryenModuleRef module, const char* func_name);

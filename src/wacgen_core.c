@@ -157,6 +157,13 @@ bool wacgen_generate_function(wacgen_ctx* ctx, const char* func_name) {
 bool wacgen_generate_c(wacgen_ctx* ctx, const char* basename, const char* wasm_file) {
     if (!ctx || !basename || !wasm_file) return false;
     
+    // Initialize context
+    ctx->block_counter = 0;
+    ctx->current_depth = 0;
+    for (int i = 0; i < 16; i++) {
+        ctx->block_depth[i] = 0;
+    }
+    
     // Load the WebAssembly module
     ctx->module = wacgen_load_module(wasm_file);
     if (!ctx->module) {
@@ -265,6 +272,17 @@ bool wacgen_translate_expression(wacgen_ctx* ctx, BinaryenExpressionRef expr, in
         return wacgen_translate_local_set(ctx, expr, indent_level);
     } else if (id == BinaryenBinaryId()) {
         return wacgen_translate_binary(ctx, expr, indent_level);
+    } else if (id == BinaryenBlockId()) {
+        return wacgen_translate_block(ctx, expr, indent_level);
+    } else if (id == BinaryenBreakId()) {
+        // Check if this is br or br_if by looking for a condition
+        if (BinaryenBreakGetCondition(expr)) {
+            return wacgen_translate_br_if(ctx, expr, indent_level);
+        } else {
+            return wacgen_translate_br(ctx, expr, indent_level);
+        }
+    } else if (id == BinaryenLoopId()) {
+        return wacgen_translate_loop(ctx, expr, indent_level);
     } else {
         wacgen_write_indent(ctx->source_file, indent_level);
         fprintf(ctx->source_file, "// TODO: Unhandled expression type %d\n", id);
@@ -318,7 +336,7 @@ bool wacgen_translate_local_get(wacgen_ctx* ctx, BinaryenExpressionRef expr, int
     if (!ctx || !expr || !ctx->source_file) return false;
     
     wacgen_write_indent(ctx->source_file, indent_level);
-    fprintf(ctx->source_file, "param_0; // local.get\n");
+    fprintf(ctx->source_file, "return param_0; // local.get\n");
     return true;
 }
 
@@ -334,6 +352,112 @@ bool wacgen_translate_binary(wacgen_ctx* ctx, BinaryenExpressionRef expr, int in
     if (!ctx || !expr || !ctx->source_file) return false;
     
     wacgen_write_indent(ctx->source_file, indent_level);
-    fprintf(ctx->source_file, "(param_0 + param_1); // binary op simplified\n");
+    fprintf(ctx->source_file, "(param_0 + param_1) // binary op simplified\n");
+    return true;
+}
+
+bool wacgen_translate_block(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level) {
+    if (!ctx || !expr || !ctx->source_file) return false;
+    
+    // Get block name for label generation
+    const char* block_name = BinaryenBlockGetName(expr);
+    
+    // Generate a unique label for this block
+    ctx->block_counter++;
+    int current_block_id = ctx->block_counter;
+    
+    if (block_name && strlen(block_name) > 0) {
+        wacgen_write_indent(ctx->source_file, indent_level);
+        fprintf(ctx->source_file, "{ // block %s\n", block_name);
+    } else {
+        wacgen_write_indent(ctx->source_file, indent_level);
+        fprintf(ctx->source_file, "{ // unnamed block %d\n", current_block_id);
+    }
+    
+    // Get block children and translate each one
+    int num_children = BinaryenBlockGetNumChildren(expr);
+    for (int i = 0; i < num_children; i++) {
+        BinaryenExpressionRef child = BinaryenBlockGetChildAt(expr, i);
+        if (child) {
+            wacgen_translate_expression(ctx, child, indent_level + 1);
+        }
+    }
+    
+    // Add unique label at the end of the block for branch targets
+    wacgen_write_indent(ctx->source_file, indent_level);
+    if (block_name && strlen(block_name) > 0) {
+        fprintf(ctx->source_file, "end_%s: ; // label for %s\n", block_name, block_name);
+    } else {
+        fprintf(ctx->source_file, "end_block_%d: ; // label for unnamed block %d\n", current_block_id, current_block_id);
+    }
+    fprintf(ctx->source_file, "} // end block\n");
+    
+    return true;
+}
+
+bool wacgen_translate_br(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level) {
+    if (!ctx || !expr || !ctx->source_file) return false;
+    
+    // Get the break name for the target
+    const char* name = BinaryenBreakGetName(expr);
+    
+    wacgen_write_indent(ctx->source_file, indent_level);
+    if (name && strlen(name) > 0) {
+        fprintf(ctx->source_file, "goto end_%s; // WebAssembly br to %s\n", name, name);
+    } else {
+        fprintf(ctx->source_file, "goto end_block; // WebAssembly br to unnamed block\n");
+    }
+    
+    return true;
+}
+
+bool wacgen_translate_br_if(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level) {
+    if (!ctx || !expr || !ctx->source_file) return false;
+    
+    // Get condition and break name
+    BinaryenExpressionRef condition = BinaryenBreakGetCondition(expr);
+    const char* name = BinaryenBreakGetName(expr);
+    
+    wacgen_write_indent(ctx->source_file, indent_level);
+    fprintf(ctx->source_file, "if (");
+    
+    // Translate condition
+    if (condition) {
+        wacgen_translate_expression(ctx, condition, 0);  // No extra indent for condition
+    } else {
+        fprintf(ctx->source_file, "param_0");  // fallback
+    }
+    
+    fprintf(ctx->source_file, ") {\n");
+    
+    wacgen_write_indent(ctx->source_file, indent_level + 1);
+    if (name && strlen(name) > 0) {
+        fprintf(ctx->source_file, "goto end_%s; // WebAssembly br_if to %s\n", name, name);
+    } else {
+        fprintf(ctx->source_file, "goto end_block; // WebAssembly br_if to unnamed block\n");
+    }
+    
+    wacgen_write_indent(ctx->source_file, indent_level);
+    fprintf(ctx->source_file, "}\n");
+    
+    return true;
+}
+
+bool wacgen_translate_loop(wacgen_ctx* ctx, BinaryenExpressionRef expr, int indent_level) {
+    if (!ctx || !expr || !ctx->source_file) return false;
+    
+    // Get loop body
+    BinaryenExpressionRef body = BinaryenLoopGetBody(expr);
+    
+    wacgen_write_indent(ctx->source_file, indent_level);
+    fprintf(ctx->source_file, "while (1) {\n");  // Infinite loop for WebAssembly loop
+    
+    if (body) {
+        wacgen_translate_expression(ctx, body, indent_level + 1);
+    }
+    
+    wacgen_write_indent(ctx->source_file, indent_level);
+    fprintf(ctx->source_file, "}\n");
+    
     return true;
 }
