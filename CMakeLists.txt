@@ -22,6 +22,7 @@ target_sources(wacgen PRIVATE
 target_include_directories(wacgen PRIVATE
     src
     src/codegen
+    ext/binaryen/src
 )
 
 # Link with Binaryen

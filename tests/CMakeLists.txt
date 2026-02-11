@@ -44,18 +44,14 @@ endforeach()
 # Custom target to build all test files
 add_custom_target(test_files ALL DEPENDS ${WASM_FILES})
 
-# Add test for nop conversion
-set(NOP_WASM ${CMAKE_CURRENT_SOURCE_DIR}/nop.wasm)
-set(NOP_OUTPUT_BASE ${CMAKE_CURRENT_BINARY_DIR}/nop)
-
 # Test case: convert nop.wasm to C source
 add_test(NAME nop_conversion 
-    COMMAND wacgen -b nop -o ${NOP_OUTPUT_BASE}.c ${NOP_WASM}
+    COMMAND ${CMAKE_COMMAND} -E echo "Testing conversion" && $<TARGET_FILE:wacgen> nop.wasm
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 # Test compilation of generated C code
 add_test(NAME nop_compilation
-    COMMAND ${CMAKE_C_COMPILER} -c ${NOP_OUTPUT_BASE}.c -o ${NOP_OUTPUT_BASE}.o -I${CMAKE_SOURCE_DIR}/runtime
+    COMMAND ${CMAKE_C_COMPILER} -c nop.c -o nop.o -I${CMAKE_SOURCE_DIR}/runtime
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )

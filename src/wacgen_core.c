@@ -1,5 +1,6 @@
 #include "wacgen_core.h"
 #include "codegen/codegen.h"
+#include <binaryen-c.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,8 +82,39 @@ wacgen_result_t wacgen_convert(const char* input_file,
     
     wacgen_result_t result = WACGEN_SUCCESS;
     
-    // Read WebAssembly module
-    BinaryenModuleRef module = BinaryenModuleRead(input_file);
+    // Read WebAssembly file into memory
+    FILE* file = fopen(input_file, "rb");
+    if (!file) {
+        fprintf(stderr, "Error: Failed to open input file: %s\n", input_file);
+        result = WACGEN_ERROR_PARSE_FAILED;
+        goto cleanup;
+    }
+    
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    
+    char* buffer = malloc(file_size);
+    if (!buffer) {
+        fprintf(stderr, "Error: Failed to allocate memory for file\n");
+        fclose(file);
+        result = WACGEN_ERROR_MEMORY;
+        goto cleanup;
+    }
+    
+    size_t bytes_read = fread(buffer, 1, file_size, file);
+    fclose(file);
+    
+    if (bytes_read != (size_t)file_size) {
+        fprintf(stderr, "Error: Failed to read entire file\n");
+        free(buffer);
+        result = WACGEN_ERROR_PARSE_FAILED;
+        goto cleanup;
+    }
+    
+    BinaryenModuleRef module = BinaryenModuleRead(buffer, bytes_read);
+    free(buffer);
+    
     if (!module) {
         fprintf(stderr, "Error: Failed to read WebAssembly module\n");
         result = WACGEN_ERROR_PARSE_FAILED;
@@ -122,26 +154,29 @@ wacgen_result_t wacgen_convert(const char* input_file,
     
     // For Phase 3, we only handle NOP functions
     // Look for exported functions and generate NOP implementation
-    int num_functions = BinaryenModuleGetNumFunctions(module);
-    for (int i = 0; i < num_functions; i++) {
-        BinaryenFunctionRef func = BinaryenModuleGetFunction(module, i);
-        if (!func) continue;
+    int num_exports = BinaryenGetNumExports(module);
+    
+    for (int i = 0; i < num_exports; i++) {
+        BinaryenExportRef export = BinaryenGetExportByIndex(module, i);
+        if (!export) continue;
         
-        const char* func_name = BinaryenFunctionGetName(func);
+        const char* export_name = BinaryenExportGetName(export);
+        if (!export_name) continue;
+        
+        // Get the function name for this export
+        const char* func_name = BinaryenExportGetValue(export);
         if (!func_name) continue;
         
-        // Check if function is exported
-        BinaryenExportRef export = BinaryenModuleGetExport(module, func_name);
-        if (export) {
-            printf("Found exported function: %s\n", func_name);
-            
-            // Get function body to check if it's just NOP
-            BinaryenExpressionRef body = BinaryenFunctionGetBody(func);
-            if (body && BinaryenExpressionGetId(body) == BinaryenNop) {
-                printf("Generating NOP implementation for %s\n", func_name);
-                generate_nop_function(c_file, module_basename, func_name);
-                generate_function_prototype(h_file, module_basename, func_name);
-            }
+        // Get the function by its internal name
+        BinaryenFunctionRef func = BinaryenGetFunction(module, func_name);
+        if (!func) continue;
+        
+        // Get function body to check if it's just NOP
+        BinaryenExpressionRef body = BinaryenFunctionGetBody(func);
+        if (body && BinaryenExpressionGetId(body) == BinaryenNopId()) {
+            printf("Generating NOP implementation for %s\n", export_name);
+            generate_nop_function(c_file, module_basename, export_name);
+            generate_function_prototype(h_file, module_basename, export_name);
         }
     }
     
