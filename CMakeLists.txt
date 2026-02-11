@@ -4,6 +4,9 @@ project(wacgen VERSION 1.0.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Check for Binaryen availability
+add_definitions(-DHAVE_BINARYEN)
+
 # Add subdirectories for dependencies
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ext/binaryen)
     add_subdirectory(ext/binaryen)

@@ -12,6 +12,7 @@
 - [x] Framework documentation
 - [x] Instruction group documentation
 - [x] Status tracking
+- [x] Phase 3: NOP module conversion
 
 ### Phase 1: Framework Documentation ✅
 - [x] Created comprehensive Binaryen C API documentation
@@ -32,12 +33,12 @@
 
 ## In Progress
 
-### Phase 3: NOP Module Conversion ⏳
-- [ ] Implement WebAssembly module parsing with Binaryen
-- [ ] Create test .wat file with nop function
-- [ ] Add CMake rules for .wat to .wasm conversion
-- [ ] Generate C source for nop function
-- [ ] Test compilation of generated code
+### Phase 3: NOP Module Conversion ✅
+- [x] Implement WebAssembly module parsing with Binaryen
+- [x] Create test .wat file with nop function
+- [x] Add CMake rules for .wat to .wasm conversion
+- [x] Generate C source for nop function
+- [x] Test compilation of generated code
 
 ### Phase 4: Control Flow Instructions ⏳
 - [ ] Implement block/loop/if translation
@@ -58,7 +59,7 @@
 
 | Group | Instructions | Status | Notes |
 |-------|-------------|---------|-------|
-| Control Flow | nop, block, loop, if, br, br_if, return | 🔄 In Progress | Phase 4 |
+| Control Flow | nop, block, loop, if, br, br_if, return | ✅ Partial | nop implemented in Phase 3 |
 | Integer | i32.add, i32.sub, i32.mul, etc. | ⏳ Not Started | Phase 5 |
 | Float | f32.add, f32.sub, f32.mul, etc. | ⏳ Not Started | Phase 5 |
 | Memory | load, store, memory.size, memory.grow | ⏳ Not Started | Phase 5 |
@@ -99,11 +100,11 @@ wacgen/
 
 ## Next Steps
 
-1. **Immediate**: Implement Phase 3 - NOP conversion
-   - Create `tests/nop.wat` test file
-   - Add `tests/CMakeLists.txt` for build rules
-   - Implement WebAssembly parsing in `wacgen_core.c`
-   - Generate basic C function template
+1. **Immediate**: Implement Phase 4 - Control flow instructions
+   - Implement block/loop/if translation
+   - Add branch instruction support
+   - Create test cases for control flow
+   - Verify generated C code compiles
 
 2. **Short Term**: Complete Phase 4 - Control flow
    - Implement control flow instruction translation
