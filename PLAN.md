@@ -34,8 +34,9 @@ Project's test infrastructure:
   WebAssembly sources into `.wasm` binary to be used as test cases
 - Generated C99 sources should be compiled with same compiler
   as `wacgen` command compiled
-- Test verification: compilation checking only (no runtime execution)
-- Test data: minimal test cases for easy review
+- **Test verification: compilation checking AND runtime execution verification**
+- **Test result validation: verify function outputs match expected WebAssembly behavior**
+- Test data: functional test cases with input/output verification
 
 ## Directory Structure
 
@@ -241,6 +242,8 @@ void __{basename}_nop_func(wacgenrt_ctx* ctx) {
 - Add them to `test/` and connect to buildsystem
 - Implement C99 source generation for these instructions
 - Test compilation of generated code
+- **Functional testing: verify generated C code produces correct output**
+- **Runtime verification: create test programs that call generated functions and validate results**
 
 ## Phase5: Extend instruction support
 
@@ -264,13 +267,13 @@ Maintain `STATUS.md` with:
 - [x] Phase 1: Framework documentation  
 - [x] Phase 2: Instruction grouping
 - [x] Phase 3: NOP conversion
-- [ ] Phase 4: Control flow instructions
+- [x] Phase 4: Control flow instructions (with functional testing)
 - [ ] Phase 5: Additional instruction groups
 
 ## Supported WebAssembly Instructions
 | Group | Instructions | Status |
 |-------|-------------|---------|
-| Control Flow | nop, block, loop | 🔄 In Progress |
+| Control Flow | nop, if, return, block, loop, branch | ✅ Implemented (with functional tests) |
 | Integer | i32.add, i32.sub | ⏳ Not Started |
 ```
 
@@ -279,4 +282,38 @@ Maintain `STATUS.md` with:
 On development iteration, configure the project on `/build`
 directory. This directory must not be commited to the Git history.
 (already added in `.gitignore`)
+
+### Testing methodology
+
+**Functional Testing Approach (Phase 4+):**
+- Create test programs that call generated C functions with various inputs
+- Verify function outputs match expected WebAssembly behavior
+- Include both positive and negative test cases
+- Test edge cases (zero, negative values, boundary conditions)
+- Ensure generated code compiles, links, and executes correctly
+
+**Test Structure:**
+```c
+// Example test pattern
+int main() {
+    wacgenrt_ctx ctx = {0};
+    
+    // Test case 1: expected behavior
+    result = __generated_function(&ctx, input1, input2);
+    assert(result == expected_output);
+    
+    // Test case 2: boundary condition
+    result = __generated_function(&ctx, 0, max_value);
+    assert(result == expected_boundary_output);
+    
+    printf("✅ All tests passed!\n");
+    return 0;
+}
+```
+
+**Validation Requirements:**
+1. **Compilation**: Generated C code compiles without errors or warnings
+2. **Execution**: Generated functions can be called and return values
+3. **Correctness**: Function outputs match WebAssembly specification behavior
+4. **Robustness**: Handle various input combinations correctly
 
