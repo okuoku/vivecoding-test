@@ -24,7 +24,7 @@ To emit a line of the file, follow these steps
 for each array entry of input `compile_commands.json` :
 
 1. Get an object from the input
-2. If the object contained, convert `commands` into `arguments`
+2. If the object contained `command` field, convert it into `arguments`
 3. Emit `file` `arguments` `directory` fields as single-line JSON
 
 

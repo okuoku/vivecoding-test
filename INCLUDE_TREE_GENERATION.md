@@ -2,14 +2,14 @@
 
 "include tree" is a file dependency tree of a C/C++ source file that
 constructed by `#include` preprocessor operation which is observed by
-previous `run_project.py` operation.
+previous `exec_project.py` operation.
 
 ## Output structure
 
 `rs_project_include_tree.json` file will contain a JSON object that has:
 
-- `nodes` : Array of path that will be used with "include tree" notation
-- `files` : Array of entries that maps with `rs_project_preprocess.jsonl` lines
+- `nodes` : Array of paths that will be used with "include tree" notation
+- `files` : Array of entries that corresponds to `rs_project_preprocess.jsonl` lines
 
 Its `files` entry is an array and each array entries are a JSON object that contains:
 
@@ -77,20 +77,20 @@ Each line should denote a single event.
 Lines starting `#` and following single space contains space-separated fields. 
 A line of preprocessor output should be parsed in following algorithm:
 
-1. Skip the line was not started with `#` character and following single space
+1. Skip the line that was not started with `#` character and following single space
 2. Skip the line if the first field is not a numeric value
 3. Take second value as double-quoted string of `filename`
 4. Take third and beyond values as numeric `flags`
 
 ### 2: Filter out unnecessary events
 
-If `filename` was the these values, we can ignore the event.
+If `filename` was one of these values, we can ignore the event.
 
 `<built-in>` `<command line>` `<stdin>`
 
 ### 3: Construct In/Out event stream
 
-Each events can be considered as either of `in` or `out` event.
+Each event can be considered as either an `in` or `out` event.
 
 - If `flags` contained numeric value `1` the event is a `in` event
 - If `flags` contained numeric value `2` the event is an `out` event

@@ -20,7 +20,7 @@ cd /path/to/project
 python3 analyze.py < ./compile_commands.json > rs_project_cmds.jsonl
 python3 inject_preprocess.py -b check < rs_project_cmds.jsonl > rs_project_preprocess.jsonl
 python3 exec_project.py < rs_project_preprocess.jsonl # Generates *.i
-python3 analyze_project.py < rs_project_preprocess.jsonl > result.json
+python3 analyze_include_tree.py < rs_project_preprocess.jsonl > result.json
 ```
 
 ## `analyze.py` -- `compile_commands.json` analyzer
@@ -40,7 +40,7 @@ Each JSON object should have following fields:
 
 ## `inject_preprocess.py` -- Replace command arguments for analysis
 
-`inspect.py` will analyze generated `rs_project_cmds.jsonl` and
+`inject_preprocess.py` will analyze generated `rs_project_cmds.jsonl` and
 emits `rs_project_preprocess.jsonl` that contains replaced command
 line that emits preprocessed results.
 See `SPEC_INJECT.md` for its detailed specs.
@@ -60,7 +60,7 @@ for each root JSON objects included in the JSONL file.
 
 ## `analyze_include_tree.py` -- Analyze preprocessed files for include tree
 
-`analyze_project.py` will read `rs_project_preprocess.jsonl` file
+`analyze_include_tree.py` will read `rs_project_preprocess.jsonl` file
 and parses all of preprocessed file to construct `rs_project_include_tree.json`
 file.
 See `INCLUDE_TREE_GENERATION.md` for actual algorithm to generate
