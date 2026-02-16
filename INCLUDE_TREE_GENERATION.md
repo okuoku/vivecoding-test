@@ -195,12 +195,12 @@ console.log(convert(EVENTS));
 To prevent bloating output, we will convert "include tree" into array of
 indices.
 
-Above example will be encoded as
+For example, above example can be encoded as
 
 ```json
 {
-  "files": [{"inctree": [0, [1, 2]]}],
-  "nodes": ["temp.c", "b.h", "c.h"]
+  "files": [{"inctree": [1, [0, 2]]}],
+  "nodes": ["./b.h", "temp.c", "./c.h"]
 }
 ```
 
