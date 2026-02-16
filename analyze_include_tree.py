@@ -42,25 +42,26 @@ def build_include_tree(events):
     # Convert events to a JSON array structure
     # Initialize stack and root
     stack = []
-    root = []
+    root = None
 
     for filename, event in events:
         if event == "in":
             # Push to stack
-            if stack:
-                # Add to parent's children
-                stack[-1].append(filename)
+            if not stack:
+                # This is the first file, so create root
+                root = [filename]
+                stack.append(root)
             else:
-                # This is the first file, so add to root
-                root.append(filename)
-            stack.append([filename])
+                # Add to parent's children
+                parent = stack[-1]
+                parent.append(filename)
+                # Create new stack element for this file
+                child = [filename]
+                stack.append(child)
         elif event == "out":
             # Pop from stack
             if stack:
                 stack.pop()
-            # If stack becomes empty, reset to root
-            if not stack:
-                stack.append(root)
 
     return root
 

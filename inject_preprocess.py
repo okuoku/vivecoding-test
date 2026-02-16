@@ -17,6 +17,7 @@ def main():
         return
 
     # Process each line
+    counter = 0
     for line in data.split("\n"):
         if not line.strip():
             continue
@@ -41,12 +42,10 @@ def main():
             if arg == "-o" and i + 1 < len(arg_list):
                 # Replace -o and its value with -o <generated-filename>.i
                 # Generate filename with basename and counter
-                counter = 0
                 while True:
                     filename = f"{args.b}-{counter}.i"
-                    if not os.path.exists(filename):
-                        break
                     counter += 1
+                    break
 
                 # Replace -o and its value
                 arg_list[i] = "-o"
@@ -55,6 +54,9 @@ def main():
 
         # Add preprocess_file field
         cmd["preprocess_file"] = filename
+
+        # Update arguments field
+        cmd["arguments"] = arg_list
 
         # Output JSON
         print(json.dumps(cmd))
