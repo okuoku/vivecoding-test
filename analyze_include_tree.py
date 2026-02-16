@@ -11,15 +11,17 @@ def parse_events(lines):
     for line in lines:
         if not line.startswith("# "):
             continue
-        parts = line.split()
-        if len(parts) < 3:
+        import re
+
+        m = re.match(r'^#\s+\d+\s+"([^"]+)"(.*)$', line)
+        if not m:
             continue
-        try:
-            line_no = int(parts[1])
-        except ValueError:
+        filename = m.group(1)
+        # ignore built-in, command line, stdin
+        if filename in {"<built-in>", "<command line>", "<stdin>"}:
             continue
-        filename = parts[2].strip('"')
-        flags = [int(f) for f in parts[3:]] if len(parts) > 3 else []
+        rest = m.group(2).strip()
+        flags = [int(f) for f in rest.split()] if rest else []
         ev = None
         if 1 in flags:
             ev = "in"
@@ -33,43 +35,69 @@ def parse_events(lines):
 def build_tree(events):
     root = None
     stack = []
+    children_map = {}
     for name, ev in events:
+        print(stack)
         if not root:
             root = name
             stack = [name]
+            children_map.setdefault(name, [])
             continue
         if ev == "in":
+            parent = stack[-1]
+            children_map.setdefault(name, [])
+            children_map[parent].append(name)
             stack.append(name)
-        else:
+        else:  # out
             while stack and stack[-1] != name:
                 stack.pop()
 
-    # Build nested list
-    def serialize(name, stack):
-        children = [name]
-        return [name]
+    def serialize(node):
+        ch = children_map.get(node, [])
+        if not ch:
+            return node
+        return [node] + [serialize(c) for c in ch]
 
-    # Simplify: just return list of names
-    return events
+    return serialize(root)
+
+
+def compress(tree, nodes_list):
+    # assign indices
+    idx_map = {}
+
+    def build(node):
+        if isinstance(node, str):
+            if node not in idx_map:
+                idx_map[node] = len(idx_map)
+                nodes_list.append(node)
+            return idx_map[node]
+        # node is list
+        if node[0] not in idx_map:
+            idx_map[node[0]] = len(idx_map)
+            nodes_list.append(node[0])
+        return [idx_map[node[0]]] + [build(c) for c in node[1:]]
+
+    return build(tree)
 
 
 def main():
-    data = json.load(sys.stdin)
     result = {"nodes": [], "files": []}
-    for entry in data:
-        file = entry["preprocess_file"]
-        if not os.path.exists(file):
+    for line in sys.stdin:
+        entry = json.loads(line)
+        file_path = entry.get("preprocess_file")
+        if not os.path.exists(file_path):
             continue
-        with open(file) as f:
+        with open(file_path, "r") as f:
             events = parse_events(f.readlines())
-        # naive tree: list of file names
-        inctree = [e[0] for e in events]
-        result["nodes"] = list(set(result["nodes"] + inctree))
+        tree = build_tree(events)
+        nodes_list = []
+        inctree = compress(tree, nodes_list)
+        result["nodes"] = list(set(result["nodes"] + nodes_list))
         result["files"].append(
             {
                 "file": entry.get("file"),
                 "directory": entry.get("directory"),
-                "preprocess_file": file,
+                "preprocess_file": file_path,
                 "inctree": inctree,
             }
         )
