@@ -2,7 +2,6 @@
 import sys
 import json
 import subprocess
-import os
 import argparse
 
 
@@ -18,37 +17,15 @@ def exec_project(input_file):
             continue
 
         arguments = entry["arguments"]
-        if "-E" not in arguments:
-            continue
-
         directory = entry.get("directory", ".")
-        preprocess_file = entry.get("preprocess_file", "")
 
         try:
-            result = subprocess.run(
-                arguments, cwd=directory, capture_output=True, text=True
-            )
+            subprocess.run(arguments, cwd=directory, check=True)
 
-            if result.returncode != 0:
-                print(
-                    f"Error executing command: {' '.join(arguments)}", file=sys.stderr
-                )
-                print(f"Return code: {result.returncode}", file=sys.stderr)
-                print(f"stderr: {result.stderr}", file=sys.stderr)
-                continue
-
-            if preprocess_file:
-                output_path = os.path.join(directory, preprocess_file)
-                output_dir = os.path.dirname(output_path)
-                if output_dir and not os.path.exists(output_dir):
-                    os.makedirs(output_dir, exist_ok=True)
-
-                with open(output_path, "w") as f:
-                    f.write(result.stdout)
-
-        except subprocess.SubprocessError as e:
+        except subprocess.CalledProcessError as e:
             print(f"Error executing command: {' '.join(arguments)}", file=sys.stderr)
-            print(f"Error: {e}", file=sys.stderr)
+            print(f"Return code: {e.returncode}", file=sys.stderr)
+            print(f"stderr: {e.stderr}", file=sys.stderr)
             continue
 
 

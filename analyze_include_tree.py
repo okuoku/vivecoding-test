@@ -21,7 +21,7 @@ def parse_preprocessor_line(line):
     except ValueError:
         return None
 
-    filename = parts[2]
+    filename = parts[2].strip('"')
     flags = parts[3:]
 
     return (filename, flags)
@@ -103,29 +103,16 @@ def construct_include_tree(events):
 def compress_include_tree(include_tree, nodes):
     """Compress include tree using indices"""
 
-    def find_node_paths(tree, nodes_set, path):
-        if isinstance(tree, str):
-            if tree in nodes_set:
-                return [path + [tree]]
-            return []
-        elif isinstance(tree, list):
-            result = []
-            for item in tree:
-                result.extend(find_node_paths(item, nodes_set, path))
-            return result
-        return []
-
-    nodes_set = set(nodes)
-    paths = find_node_paths(include_tree, nodes_set, [])
-
     node_index_map = {node: idx for idx, node in enumerate(nodes)}
 
-    compressed_files = []
-    for path in paths:
-        compressed_path = [node_index_map[node] for node in path]
-        compressed_files.append(compressed_path)
+    def compress_tree(tree):
+        if isinstance(tree, str):
+            return node_index_map.get(tree, -1)
+        elif isinstance(tree, list):
+            return [compress_tree(item) for item in tree]
+        return tree
 
-    return {"files": compressed_files, "nodes": nodes}
+    return {"files": [{"inctree": compress_tree(include_tree)}], "nodes": nodes}
 
 
 def analyze_include_tree(input_file, output_file):
@@ -165,13 +152,15 @@ def analyze_include_tree(input_file, output_file):
         )
 
     nodes = sorted(nodes_set)
-    if preprocess_entries:
-        include_tree = preprocess_entries[0]["inctree"]
-    else:
-        include_tree = None
-    compressed = compress_include_tree(include_tree, nodes)
+    compressed_entries = []
+    for entry in preprocess_entries:
+        if entry["inctree"]:
+            compressed = compress_include_tree(entry["inctree"], nodes)
+            compressed_entries.append(compressed["files"][0])
+        else:
+            compressed_entries.append({"inctree": None})
 
-    output = {"nodes": nodes, "files": preprocess_entries}
+    output = {"nodes": nodes, "files": compressed_entries}
 
     print(json.dumps(output))
 
