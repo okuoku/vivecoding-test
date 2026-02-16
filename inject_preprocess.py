@@ -6,12 +6,15 @@ inject_preprocess.py - Replace command arguments for analysis
 import json
 import sys
 
+# Module-level counter
+global_counter = 0
+
 
 def inject_preprocess(jsonl_lines, basename):
     """
     Process rs_project_cmds.jsonl and inject preprocess commands
     """
-    counter = 0
+    global global_counter
 
     for line in jsonl_lines:
         try:
@@ -32,8 +35,9 @@ def inject_preprocess(jsonl_lines, basename):
             continue
 
         # Create preprocess filename
-        preprocess_filename = f"{basename}-{counter}.i"
-        counter += 1
+        global global_counter
+        global_counter += 1
+        preprocess_filename = f"{basename}-{global_counter - 1}.i"
 
         # Replace -c with -E and replace -o with preprocess file
         new_arguments = []

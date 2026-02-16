@@ -12,6 +12,7 @@ import os
 def run_preprocess_command(entry):
     """
     Run a single preprocess command
+    The -o option is already set in the arguments, so we just need to run it
     """
     directory = entry.get("directory", "")
     arguments = entry.get("arguments", [])
@@ -26,12 +27,19 @@ def run_preprocess_command(entry):
         if directory:
             os.chdir(directory)
 
-        # Run the command
+        # Run the command - it will write to preprocess_file via -o option
         result = subprocess.run(arguments, capture_output=True, text=True)
 
-        # Write output to preprocess file
-        with open(preprocess_file, "w") as f:
-            f.write(result.stdout)
+        if result.returncode != 0:
+            print(
+                f"Error processing {preprocess_file}: {result.stderr}", file=sys.stderr
+            )
+            return False
+
+        # Check if output file was created
+        if not os.path.exists(preprocess_file):
+            print(f"Preprocess file {preprocess_file} was not created", file=sys.stderr)
+            return False
 
         return True
     except Exception as e:

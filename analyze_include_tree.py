@@ -84,7 +84,7 @@ def extract_in_out_events(events):
 def build_include_tree(events):
     """
     Build include tree from in/out events
-    Returns a nested structure representing the tree
+    Returns a nested structure representing the tree (root node)
     """
     if not events:
         return None
@@ -98,27 +98,25 @@ def build_include_tree(events):
     stack = []
 
     for file, ev in events:
+        if not root:
+            # First event - create root regardless of type
+            root = TreeNode(file)
+            if ev == 1:
+                # If it's an IN event, add to stack
+                stack.append(root)
+            # If it's an OUT event, don't add to stack yet
+            continue
+
         if ev == 1:  # In event
             node = TreeNode(file)
-
-            if not root:
-                # First real file becomes root
-                root = node
-                stack = [root]
-            else:
-                # Add as child of current top
-                parent = stack[-1] if stack else root
-                parent.children.append(node)
-                stack.append(node)
+            parent = stack[-1] if stack else root
+            parent.children.append(node)
+            stack.append(node)
 
         elif ev == 2:  # Out event
-            # Pop until we find matching file or reach root
+            # Return to `file`: pop until stack top matches `file`
             while stack and stack[-1].name != file:
                 stack.pop()
-
-            # If we popped everything, recover to root
-            if not stack and root:
-                stack.append(root)
 
     return root
 
@@ -126,46 +124,64 @@ def build_include_tree(events):
 def serialize_tree(node):
     """
     Serialize tree to the required format
+    Returns: string for leaf, [name, child1, child2...] for node with children
     """
     if not node:
         return None
 
-    if not node.children:
-        return node.name
+    # Convert children recursively
+    children = [serialize_tree(child) for child in node.children]
 
-    return [node.name] + [serialize_tree(child) for child in node.children]
+    # If node has children, return [name, child1, child2...]
+    if children:
+        return [node.name] + children
+
+    # Leaf node: just the name
+    return node.name
 
 
 def compress_tree(tree, nodes):
     """
     Compress tree using node indices
-    Returns [index, ...] structure
+    Returns [index, ...] structure where index points to nodes array
     """
     if not tree:
         return None
 
-    if isinstance(tree, str):
-        # Leaf node - add to nodes list and return index
-        if tree not in nodes:
-            nodes.append(tree)
-        return nodes.index(tree)
+    # Collect all unique node names from the tree
+    def collect_nodes(obj):
+        if isinstance(obj, str):
+            return [obj]
+        elif isinstance(obj, list):
+            result = []
+            # First element of a list is the node name
+            if obj and isinstance(obj[0], str):
+                result.append(obj[0])
+            # Then collect from children
+            for item in obj[1:]:
+                if item is not None:
+                    result.extend(collect_nodes(item))
+            return result
+        return []
 
-    # Array node - recursively compress children
-    if isinstance(tree, list) and len(tree) > 0:
-        # First element is the node name
-        if isinstance(tree[0], str):
-            index = compress_tree(tree[0], nodes)
-            children = tree[1:]
-        else:
-            index = compress_tree(tree, nodes)
-            children = []
+    all_node_names = collect_nodes(tree)
+    unique_nodes = sorted(list(set(all_node_names)))
 
-        # Compress all children
-        compressed_children = [compress_tree(child, nodes) for child in children]
+    # Update the nodes list with unique nodes (only add new ones)
+    for node in unique_nodes:
+        if node not in nodes:
+            nodes.append(node)
 
-        return [index] + compressed_children
+    # Now compress the tree structure using indices from the global nodes array
+    def compress(obj):
+        if isinstance(obj, str):
+            return nodes.index(obj)
+        elif isinstance(obj, list):
+            # Only compress non-None items
+            return [compress(item) if item is not None else None for item in obj]
+        return None
 
-    return None
+    return compress(tree)
 
 
 def process_jsonl(jsonl_lines):
@@ -173,7 +189,7 @@ def process_jsonl(jsonl_lines):
     Process rs_project_preprocess.jsonl and generate include tree
     """
     files = []
-    all_nodes = []
+    all_nodes = []  # Global nodes list shared across all files
 
     for line in jsonl_lines:
         try:
@@ -196,15 +212,12 @@ def process_jsonl(jsonl_lines):
         if not root_node:
             continue
 
-        # Serialize and compress tree
+        # Serialize tree: leaf -> string, node with children -> [name, child1, child2...]
         serialized = serialize_tree(root_node)
-        compressed_nodes = []
-        compressed_tree = compress_tree(serialized, compressed_nodes)
 
-        # Collect all unique nodes
-        for node in compressed_nodes:
-            if node not in all_nodes:
-                all_nodes.append(node)
+        # Compress tree using indices
+        compressed_nodes = []
+        compressed_tree = compress_tree(serialized, all_nodes)
 
         # Create file entry
         file_entry = {
@@ -216,7 +229,7 @@ def process_jsonl(jsonl_lines):
 
         files.append(file_entry)
 
-    # Generate final output
+    # Generate final output with shared nodes array
     result = {"nodes": all_nodes, "files": files}
 
     print(json.dumps(result, ensure_ascii=False))
